@@ -27,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
     DocumentsScreen(),
     SettingsScreen(),
   ];
-
   @override
   void initState() {
     super.initState();
