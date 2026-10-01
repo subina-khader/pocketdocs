@@ -55,7 +55,6 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
 
       _categoryId = document.categoryId;
 
-      _documentDate = document.documentDate;
 
       _selectedFile = File(document.filePath);
 
@@ -217,7 +216,6 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
         filePath: filePath,
         fileType: _isPdf ? DocumentType.pdf : DocumentType.image,
         createdAt: widget.document?.createdAt ?? DateTime.now(),
-        documentDate: _documentDate,
         notes: _notesController.text.trim().isEmpty
             ? null
             : _notesController.text.trim(),
@@ -369,14 +367,6 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
 
             const SizedBox(height: 14),
 
-            // DOCUMENT DATE
-            _DateField(
-              label: 'Document Date',
-              date: _documentDate,
-              onTap: _selectDocumentDate,
-            ),
-
-            const SizedBox(height: 14),
 
             // NOTES
             TextFormField(

@@ -12,7 +12,6 @@ class Document {
   final String filePath;
   final DocumentType fileType;
   final DateTime createdAt;
-  final DateTime? documentDate;
   final String? notes;
   final int? folderId;
 
@@ -23,7 +22,6 @@ class Document {
     required this.filePath,
     required this.fileType,
     required this.createdAt,
-    this.documentDate,
     this.notes,
     this.folderId,
   });
@@ -35,7 +33,6 @@ class Document {
     String? filePath,
     DocumentType? fileType,
     DateTime? createdAt,
-    DateTime? documentDate,
     String? notes,
     int? folderId,
   }) {
@@ -46,7 +43,6 @@ class Document {
       filePath: filePath ?? this.filePath,
       fileType: fileType ?? this.fileType,
       createdAt: createdAt ?? this.createdAt,
-      documentDate: documentDate ?? this.documentDate,
       notes: notes ?? this.notes,
       folderId: folderId ?? this.folderId,
     );

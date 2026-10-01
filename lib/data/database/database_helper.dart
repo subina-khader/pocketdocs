@@ -90,8 +90,7 @@ class DatabaseHelper {
         ${DatabaseConstants.createdAt}
             TEXT NOT NULL,
 
-        ${DatabaseConstants.documentDate}
-            TEXT,
+        
 
         ${DatabaseConstants.notes}
             TEXT,

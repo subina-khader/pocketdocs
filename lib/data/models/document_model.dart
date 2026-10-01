@@ -9,7 +9,6 @@ class DocumentModel extends Document {
     required super.filePath,
     required super.fileType,
     required super.createdAt,
-    super.documentDate,
     super.notes,
     super.folderId,
   });
@@ -22,7 +21,6 @@ class DocumentModel extends Document {
       filePath: document.filePath,
       fileType: document.fileType,
       createdAt: document.createdAt,
-      documentDate: document.documentDate,
       notes: document.notes,
       folderId: document.folderId,
     );
@@ -39,9 +37,7 @@ class DocumentModel extends Document {
         orElse: () => DocumentType.image,
       ),
       createdAt: DateTime.parse(map[DatabaseConstants.createdAt] as String),
-      documentDate: map[DatabaseConstants.documentDate] != null
-          ? DateTime.parse(map[DatabaseConstants.documentDate] as String)
-          : null,
+
       notes: map[DatabaseConstants.notes] as String?,
       folderId: map[DatabaseConstants.folderId] as int?,
     );
@@ -55,7 +51,6 @@ class DocumentModel extends Document {
       DatabaseConstants.filePath: filePath,
       DatabaseConstants.fileType: fileType.name,
       DatabaseConstants.createdAt: createdAt.toIso8601String(),
-      DatabaseConstants.documentDate: documentDate?.toIso8601String(),
       DatabaseConstants.notes: notes,
       DatabaseConstants.folderId: folderId,
     };
@@ -68,7 +63,6 @@ class DocumentModel extends Document {
     String? filePath,
     DocumentType? fileType,
     DateTime? createdAt,
-    DateTime? documentDate,
     String? notes,
     int? folderId,
   }) {
@@ -79,7 +73,6 @@ class DocumentModel extends Document {
       filePath: filePath ?? this.filePath,
       fileType: fileType ?? this.fileType,
       createdAt: createdAt ?? this.createdAt,
-      documentDate: documentDate ?? this.documentDate,
       notes: notes ?? this.notes,
       folderId: folderId ?? this.folderId,
     );

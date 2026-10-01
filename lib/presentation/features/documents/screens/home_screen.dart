@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'folder_management_screen.dart';
 import '../../../../domain/entities/document.dart';
 import '../providers/document_provider.dart';
 import '../widgets/document_album_tile.dart';
@@ -84,6 +84,9 @@ class _HomeContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<DocumentProvider>();
     final docs = provider.allDocuments;
+    final unorganizedDocuments = docs
+        .where((document) => document.folderId == null)
+        .toList();
 
     return SafeArea(
       child: RefreshIndicator(
@@ -114,16 +117,26 @@ class _HomeContent extends StatelessWidget {
                     ],
                   ),
                 ),
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.folder_copy_rounded,
-                    color: Theme.of(context).colorScheme.primary,
+                InkWell(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const FolderManagementScreen(),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(21),
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.folder_copy_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ),
               ],
@@ -268,7 +281,7 @@ class _HomeContent extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${docs.length}',
+                  '${unorganizedDocuments.length}',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 12,
@@ -285,7 +298,7 @@ class _HomeContent extends StatelessWidget {
             else if (docs.isEmpty)
               _EmptyHome()
             else
-              ...docs.map(
+              ...unorganizedDocuments.map(
                 (document) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: DocumentListTile(

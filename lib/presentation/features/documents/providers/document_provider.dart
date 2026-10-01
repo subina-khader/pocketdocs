@@ -108,6 +108,67 @@ class DocumentProvider extends ChangeNotifier {
   // LOAD DOCUMENTS
   // ------------------------------------------------------------
 
+  Future<bool> updateFolderDocuments(
+      int folderId,
+      Set<int> selectedDocumentIds,
+      ) async {
+    try {
+      final updatedDocuments = <Document>[];
+
+      for (final document in _allDocuments) {
+        if (document.id == null) {
+          continue;
+        }
+
+        final shouldBeInFolder =
+        selectedDocumentIds.contains(document.id);
+
+        // Only update documents whose folder membership changed.
+        if (document.folderId == folderId && shouldBeInFolder) {
+          continue;
+        }
+
+        if (document.folderId != folderId && !shouldBeInFolder) {
+          continue;
+        }
+
+        final updatedDocument = Document(
+          id: document.id,
+          title: document.title,
+          categoryId: document.categoryId,
+          filePath: document.filePath,
+          fileType: document.fileType,
+          createdAt: document.createdAt,
+          notes: document.notes,
+          folderId: shouldBeInFolder ? folderId : null,
+        );
+
+        await repository.updateDocument(updatedDocument);
+        updatedDocuments.add(updatedDocument);
+      }
+
+      if (updatedDocuments.isNotEmpty) {
+        _allDocuments = _allDocuments.map((document) {
+          final updated = updatedDocuments.where(
+                (item) => item.id == document.id,
+          );
+
+          return updated.isNotEmpty
+              ? updated.first
+              : document;
+        }).toList();
+
+        _applyFiltersAndSorting();
+        _updateStatus();
+      }
+
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      return false;
+    }
+  }
+
   Future<void> loadDocuments() async {
     _setLoading();
 

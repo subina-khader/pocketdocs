@@ -25,7 +25,6 @@ static const String categoryId = 'category_id';
 static const String filePath = 'file_path';
 static const String fileType = 'file_type';
 static const String createdAt = 'created_at';
-static const String documentDate = 'document_date';
 static const String notes = 'notes';
 
 // Folder is stored as a foreign-key ID.

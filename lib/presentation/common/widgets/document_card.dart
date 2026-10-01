@@ -49,12 +49,9 @@ class DocumentCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
 
-                    const SizedBox(height: 4),
 
-                    Text(
-                      AppDateUtils.formatDate(document.documentDate),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
+
+
                   ],
                 ),
               ),
