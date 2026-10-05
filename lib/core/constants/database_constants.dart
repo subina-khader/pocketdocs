@@ -8,7 +8,7 @@ DatabaseConstants._();
 
 static const String databaseName = 'pocket_docs.db';
 
-static const int databaseVersion = 3;
+static const int databaseVersion = 4;
 
 // -------------------------
 // DOCUMENTS
@@ -45,7 +45,7 @@ static const String folderCreatedAt = 'created_at';
 // -------------------------
 
 static const String categoriesTable = 'categories';
-
+static const String categoryEmoji = 'emoji';
 static const String categoryTableId = 'id';
 static const String categoryName = 'name';
 static const String categoryCreatedAt = 'created_at';

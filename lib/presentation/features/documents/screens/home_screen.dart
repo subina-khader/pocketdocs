@@ -11,6 +11,7 @@ import 'document_details_screen.dart';
 import 'documents_screen.dart';
 import 'folder_documents_screen.dart';
 import 'settings_screen.dart';
+import 'category_management_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -117,27 +118,61 @@ class _HomeContent extends StatelessWidget {
                     ],
                   ),
                 ),
-                InkWell(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const FolderManagementScreen(),
+                Row(
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const FolderManagementScreen(),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(21),
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.folder_copy_rounded,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(21),
-                  child: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      Icons.folder_copy_rounded,
-                      color: Theme.of(context).colorScheme.primary,
+                    const SizedBox(width: 8),
+
+                    // CATEGORIES
+                    InkWell(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                            const CategoryManagementScreen(),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(21),
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .secondaryContainer,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.category_rounded,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .secondary,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),

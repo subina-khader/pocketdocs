@@ -60,7 +60,7 @@ class DatabaseHelper {
 
         ${DatabaseConstants.categoryName}
             TEXT NOT NULL UNIQUE,
-
+        ${DatabaseConstants.categoryEmoji} TEXT NOT NULL,
         ${DatabaseConstants.categoryCreatedAt}
             TEXT NOT NULL
       )

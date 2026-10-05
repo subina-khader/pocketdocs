@@ -321,7 +321,8 @@ class DocumentProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> addCategory(String name) async {
+  Future<bool> addCategory(String name,
+      String emoji,) async {
     final trimmedName = name.trim();
 
     if (trimmedName.isEmpty) {
@@ -331,6 +332,7 @@ class DocumentProvider extends ChangeNotifier {
     try {
       final category = category_entity.Category(
         name: trimmedName,
+        emoji: emoji,
         createdAt: DateTime.now(),
       );
       final savedCategory = await categoryRepository.addCategory(category);
@@ -346,7 +348,7 @@ class DocumentProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> renameCategory(int id, String name) async {
+  Future<bool> renameCategory(int id, String name, String emoji,) async {
     final trimmedName = name.trim();
 
     if (trimmedName.isEmpty) {
@@ -358,7 +360,7 @@ class DocumentProvider extends ChangeNotifier {
         (category) => category.id == id,
       );
 
-      final updatedCategory = oldCategory.copyWith(name: trimmedName);
+      final updatedCategory = oldCategory.copyWith(name: trimmedName, emoji: emoji,);
 
       await categoryRepository.updateCategory(updatedCategory);
 

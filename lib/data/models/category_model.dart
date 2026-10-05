@@ -5,6 +5,7 @@ class CategoryModel extends Category {
   const CategoryModel({
     super.id,
     required super.name,
+    required super.emoji,
     required super.createdAt,
   });
 
@@ -12,6 +13,7 @@ class CategoryModel extends Category {
     return CategoryModel(
       id: category.id,
       name: category.name,
+      emoji: category.emoji,
       createdAt: category.createdAt,
     );
   }
@@ -20,6 +22,7 @@ class CategoryModel extends Category {
     return CategoryModel(
       id: map[DatabaseConstants.categoryTableId] as int?,
       name: map[DatabaseConstants.categoryName] as String,
+      emoji: map[DatabaseConstants.categoryEmoji] as String,
       createdAt: DateTime.parse(
         map[DatabaseConstants.categoryCreatedAt] as String,
       ),
@@ -30,6 +33,7 @@ class CategoryModel extends Category {
     return {
       if (id != null) DatabaseConstants.categoryTableId: id,
       DatabaseConstants.categoryName: name,
+      DatabaseConstants.categoryEmoji: emoji,
       DatabaseConstants.categoryCreatedAt: createdAt.toIso8601String(),
     };
   }
