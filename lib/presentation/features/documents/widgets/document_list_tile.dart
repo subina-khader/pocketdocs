@@ -21,9 +21,9 @@ class DocumentListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<DocumentProvider>();
 
-    final categoryName =
-        provider.categoryNameForId(document.categoryId) ?? 'Uncategorized';
-
+    final category = provider.categoryForId(document.categoryId);
+    final categoryName = category?.name ?? 'Uncategorized';
+    final categoryEmoji = category?.emoji ?? '📄';
     return Card(
       child: InkWell(
         onTap: onTap,
@@ -52,13 +52,23 @@ class DocumentListTile extends StatelessWidget {
 
                     const SizedBox(height: 5),
 
-                    Text(
-                      categoryName,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          categoryEmoji,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          categoryName,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

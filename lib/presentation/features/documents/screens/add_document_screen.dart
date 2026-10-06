@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'category_management_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -54,7 +54,6 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
       _notesController.text = document.notes ?? '';
 
       _categoryId = document.categoryId;
-
 
       _selectedFile = File(document.filePath);
 
@@ -299,34 +298,125 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
 
             const SizedBox(height: 14),
 
+            // ------------------------------------------------------------
             // CATEGORY
+            // ------------------------------------------------------------
             Consumer<DocumentProvider>(
               builder: (context, provider, _) {
                 if (provider.categories.isEmpty) {
                   return InputDecorator(
                     decoration: const InputDecoration(labelText: 'Category'),
-                    child: const Text('No categories available'),
+                    child: Row(
+                      children: [
+                        const Expanded(child: Text('No categories available')),
+                        TextButton.icon(
+                          onPressed: () async {
+                            final category = await showCategoryDialog(context);
+
+                            if (!mounted || category == null) {
+                              return;
+                            }
+
+                            setState(() {
+                              _categoryId = category.id;
+                            });
+                          },
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text('Add'),
+                        ),
+                      ],
+                    ),
                   );
                 }
 
                 return DropdownButtonFormField<int>(
                   value: _categoryId,
                   decoration: const InputDecoration(labelText: 'Category'),
-                  items: provider.categories
-                      .map(
-                        (category) => DropdownMenuItem<int>(
-                          value: category.id,
-                          child: Text(category.name),
+
+                  items: [
+                    // --------------------------------------------------
+                    // EXISTING CATEGORIES
+                    // --------------------------------------------------
+
+                    ...provider.categories.map((category) {
+                      return DropdownMenuItem<int>(
+                        value: category.id,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              category.emoji,
+                              style: const TextStyle(
+                                fontSize: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              category.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
+                      );
+                    }),
+
+                    // --------------------------------------------------
+                    // ADD NEW CATEGORY
+                    // --------------------------------------------------
+                    const DropdownMenuItem<int>(
+                      value: -1,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.add_circle_outline_rounded,
+                            size: 20,
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            'Add new category',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  onChanged: (value) async {
+                    // User selected "Add new category"
+                    if (value == -1) {
+                      final previousCategoryId = _categoryId;
+
+                      final category = await showCategoryDialog(context);
+
+                      if (!mounted) {
+                        return;
+                      }
+
+                      if (category != null) {
+                        setState(() {
+                          _categoryId = category.id;
+                        });
+                      } else {
+                        // User cancelled the dialog.
+                        setState(() {
+                          _categoryId = previousCategoryId;
+                        });
+                      }
+
+                      return;
+                    }
+
+                    // Normal category selection.
                     setState(() {
                       _categoryId = value;
                     });
                   },
+
                   validator: (value) {
-                    if (value == null) {
+                    if (value == null || value == -1) {
                       return 'Please select a category.';
                     }
 
@@ -366,7 +456,6 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
             ),
 
             const SizedBox(height: 14),
-
 
             // NOTES
             TextFormField(

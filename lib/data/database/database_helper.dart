@@ -117,19 +117,17 @@ class DatabaseHelper {
     final now = DateTime.now().toIso8601String();
 
     final defaultCategories = [
-      'Receipt',
-      'ID Card',
-      'Vehicle',
-      'Certificate',
-      'Warranty',
-      'Bill',
-      'Travel',
-      'Other',
+      {'name': 'Receipt', 'emoji': '🧾'},
+      {'name': 'ID Card', 'emoji': '🪪'},
+      {'name': 'Vehicle', 'emoji': '🚗'},
+      {'name': 'Certificate', 'emoji': '🎓'},
+      {'name': 'Bill', 'emoji': '💰'},
     ];
 
     for (final category in defaultCategories) {
       await db.insert(DatabaseConstants.categoriesTable, {
-        DatabaseConstants.categoryName: category,
+        DatabaseConstants.categoryName: category['name'],
+        DatabaseConstants.categoryEmoji: category['emoji'],
         DatabaseConstants.categoryCreatedAt: now,
       });
     }
