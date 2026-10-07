@@ -32,8 +32,7 @@ class DocumentProvider extends ChangeNotifier {
   List<Folder> _folders = [];
   List<category_entity.Category> _categories = [];
   int? _selectedFolderId;
-  int? _selectedCategoryId;
-
+  final Set<int> _selectedCategoryIds = {};
   String _searchQuery = '';
 
   DocumentSortOption _sortOption = DocumentSortOption.newest;
@@ -58,8 +57,8 @@ class DocumentProvider extends ChangeNotifier {
       List.unmodifiable(_categories);
   int? get selectedFolderId => _selectedFolderId;
 
-  int? get selectedCategoryId => _selectedCategoryId;
-
+  Set<int> get selectedCategoryIds =>
+      Set.unmodifiable(_selectedCategoryIds);
   String? get errorMessage => _errorMessage;
 
   String get searchQuery => _searchQuery;
@@ -397,9 +396,7 @@ class DocumentProvider extends ChangeNotifier {
         return document;
       }).toList();
 
-      if (_selectedCategoryId == id) {
-        _selectedCategoryId = null;
-      }
+      _selectedCategoryIds.remove(id);
 
       _applyFiltersAndSorting();
       _updateStatus();
@@ -411,8 +408,10 @@ class DocumentProvider extends ChangeNotifier {
     }
   }
 
-  void filterByCategory(int? categoryId) {
-    _selectedCategoryId = categoryId;
+  void filterByCategories(Set<int> categoryIds) {
+    _selectedCategoryIds
+      ..clear()
+      ..addAll(categoryIds);
 
     _applyFiltersAndSorting();
     _updateStatus();
@@ -512,7 +511,7 @@ class DocumentProvider extends ChangeNotifier {
 
   void clearFilters() {
     _searchQuery = '';
-    _selectedCategoryId = null;
+    _selectedCategoryIds.clear();
     _selectedFolderId = null;
     _sortOption = DocumentSortOption.newest;
 
@@ -526,7 +525,7 @@ class DocumentProvider extends ChangeNotifier {
 
   Future<void> refresh() async {
     _searchQuery = '';
-    _selectedCategoryId = null;
+    _selectedCategoryIds.clear();
     _selectedFolderId = null;
     _sortOption = DocumentSortOption.newest;
 
@@ -661,12 +660,12 @@ class DocumentProvider extends ChangeNotifier {
     }
 
     // Category filter
-    if (_selectedCategoryId != null) {
+    if (_selectedCategoryIds.isNotEmpty) {
       result = result.where((document) {
-        return document.categoryId == _selectedCategoryId;
+        return document.categoryId != null &&
+            _selectedCategoryIds.contains(document.categoryId);
       }).toList();
     }
-
     result.sort(_compareDocuments);
 
     _documents = result;
