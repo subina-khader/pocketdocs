@@ -144,7 +144,7 @@ class _PinUnlockScreenState extends State<PinUnlockScreen> {
                       letterSpacing: 9,
                     ),
                     decoration: InputDecoration(
-                      hintText: '•••••',
+
                       counterText: '',
                       filled: true,
                       fillColor:
