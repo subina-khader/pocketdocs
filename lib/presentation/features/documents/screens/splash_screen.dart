@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../../data/services/app_lock_service.dart';
+import 'app_lock_screen.dart';
 import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -15,12 +17,47 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(milliseconds: 1200), () {
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
-    });
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    await Future.delayed(
+      const Duration(milliseconds: 1200),
+    );
+
+    if (!mounted) return;
+
+    final appLockService = AppLockService();
+
+    final isLocked = await appLockService.isEnabled();
+
+    if (!mounted) return;
+
+    if (!isLocked) {
+      _openHome();
+      return;
+    }
+
+    final unlocked = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => const AppLockScreen(),
+        fullscreenDialog: true,
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (unlocked == true) {
+      _openHome();
+    }
+  }
+
+  void _openHome() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => const HomeScreen(),
+      ),
+    );
   }
 
   @override

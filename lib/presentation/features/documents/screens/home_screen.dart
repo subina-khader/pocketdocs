@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../data/services/app_lock_service.dart';
 import 'folder_management_screen.dart';
 import '../../../../domain/entities/document.dart';
 import '../providers/document_provider.dart';
@@ -12,7 +13,7 @@ import 'documents_screen.dart';
 import 'folder_documents_screen.dart';
 import 'settings_screen.dart';
 import 'category_management_screen.dart';
-
+import 'app_lock_screen.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -20,8 +21,10 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>  with WidgetsBindingObserver {
   int _index = 0;
+  bool _shouldLockOnResume = false;
+  bool _isShowingLock = false;
 
   final _pages = const [
     _HomeContent(),
@@ -31,11 +34,51 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DocumentProvider>().loadData();
     });
   }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _shouldLockOnResume = true;
+      return;
+    }
 
+    if (state == AppLifecycleState.resumed &&
+        _shouldLockOnResume) {
+      _shouldLockOnResume = false;
+      _showAppLock();
+    }
+  }
+  Future<void> _showAppLock() async {
+    if (_isShowingLock || !mounted) return;
+
+    final appLockService = AppLockService();
+
+    final isEnabled = await appLockService.isEnabled();
+
+    if (!isEnabled || !mounted) return;
+
+    _isShowingLock = true;
+
+    try {
+      await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => const AppLockScreen(),
+          fullscreenDialog: true,
+        ),
+      );
+    } finally {
+      _isShowingLock = false;
+    }
+  }
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
