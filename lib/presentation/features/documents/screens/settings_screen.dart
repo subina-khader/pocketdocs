@@ -1,4 +1,10 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as path;
+import 'package:share_plus/share_plus.dart';
+
+import '../../../../data/services/backup_restore_service.dart';
+import '../../../../dependency_injection/injection_container.dart';
 import 'pin_setup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -16,6 +22,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   String _storageText = 'Calculating...';
   bool _appLockEnabled = false;
+  bool _isBackupRestoreLoading = false;
   AppLockType? _appLockType;
   bool _hasPocketDocsPin = false;
   final AppLockService _appLockService = AppLockService();
@@ -326,13 +333,269 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _backupDocuments() async {
-    _showComingSoon('Backup implementation will be connected here.');
-  }
+    if (_isBackupRestoreLoading) return;
 
+    setState(() {
+      _isBackupRestoreLoading = true;
+    });
+
+    print('========== POCKETDOCS BACKUP START ==========');
+
+    try {
+      final backupService = sl<BackupRestoreService>();
+
+      print('Creating backup...');
+
+      final backupFile = await backupService.createBackup();
+
+      print('Backup created.');
+      print('Backup path: ${backupFile.path}');
+      print('Backup name: ${path.basename(backupFile.path)}');
+      print('Backup extension: ${path.extension(backupFile.path)}');
+      print('Backup exists: ${await backupFile.exists()}');
+      print('Backup size: ${await backupFile.length()} bytes');
+
+      if (!mounted) return;
+
+      print('Opening share sheet...');
+
+      await Share.shareXFiles(
+        [
+          XFile(backupFile.path),
+        ],
+        text: 'PocketDocs backup',
+        subject: 'PocketDocs Backup',
+      );
+
+      print('Share.shareXFiles completed.');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Backup created successfully.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      print('Backup success SnackBar shown.');
+    } catch (e, stackTrace) {
+      print('========== BACKUP ERROR ==========');
+      print('Error: $e');
+      print('StackTrace: $stackTrace');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Backup failed: ${_cleanErrorMessage(e)}',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      print('========== POCKETDOCS BACKUP END ==========');
+
+      if (mounted) {
+        setState(() {
+          _isBackupRestoreLoading = false;
+        });
+
+        await _loadStorage();
+      }
+    }
+  }
   Future<void> _restoreBackup() async {
-    _showComingSoon('Restore implementation will be connected here.');
+    if (_isBackupRestoreLoading) return;
+
+    print('========== POCKETDOCS RESTORE START ==========');
+
+    try {
+      print('Opening file picker...');
+
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        withData: false,
+      );
+
+      if (result == null) {
+        print('File picker cancelled.');
+        return;
+      }
+
+      print('File picker returned.');
+      print('Number of files: ${result.files.length}');
+
+      final pickedFile = result.files.single;
+
+      print('---------------- PICKED FILE DEBUG ----------------');
+      print('File name: ${pickedFile.name}');
+      print('File path: ${pickedFile.path}');
+      print('File extension: ${path.extension(pickedFile.name)}');
+      print('File size from picker: ${pickedFile.size}');
+      print('Bytes available: ${pickedFile.bytes != null}');
+      print('Identifier: ${pickedFile.identifier}');
+      print('---------------- END PICKED FILE DEBUG ----------------');
+
+      if (pickedFile.path == null) {
+        print('ERROR: FilePicker returned null path.');
+        throw Exception('Unable to access the selected backup file.');
+      }
+
+      final file = File(pickedFile.path!);
+
+      print('Actual File path: ${file.path}');
+      print('Actual file exists: ${await file.exists()}');
+
+      if (await file.exists()) {
+        print('Actual file size: ${await file.length()} bytes');
+      }
+
+      print(
+        'Filename ends with .pocketdocs: '
+            '${pickedFile.name.toLowerCase().endsWith('.pocketdocs')}',
+      );
+
+      print(
+        'Path ends with .pocketdocs: '
+            '${file.path.toLowerCase().endsWith('.pocketdocs')}',
+      );
+
+      // TEMPORARILY DO NOT REJECT BASED ON EXTENSION.
+      //
+      // We will let BackupRestoreService inspect the actual archive.
+      // This is more reliable for files coming from Google Drive.
+
+      if (!mounted) return;
+
+      print('Showing restore confirmation...');
+
+      final confirmed = await _showRestoreConfirmation();
+
+      print('Restore confirmation result: $confirmed');
+
+      if (confirmed != true || !mounted) {
+        print('Restore cancelled by user.');
+        return;
+      }
+
+      setState(() {
+        _isBackupRestoreLoading = true;
+      });
+
+      print('Calling BackupRestoreService.restoreBackup()...');
+      print('Restore file: ${file.path}');
+
+      final backupService = sl<BackupRestoreService>();
+
+      await backupService.restoreBackup(file);
+
+      print('restoreBackup() completed successfully.');
+
+      if (!mounted) return;
+
+      final provider = context.read<DocumentProvider>();
+
+      print('Reloading documents...');
+      await provider.loadDocuments();
+
+      print('Reloading folders...');
+      await provider.loadFolders();
+
+      print('Reloading categories...');
+      await provider.loadCategories();
+
+      await _loadStorage();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Backup restored successfully.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      print('Restore success SnackBar shown.');
+    } catch (e, stackTrace) {
+      print('========== RESTORE ERROR ==========');
+      print('Error: $e');
+      print('StackTrace: $stackTrace');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Restore failed: ${_cleanErrorMessage(e)}',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      print('========== POCKETDOCS RESTORE END ==========');
+
+      if (mounted) {
+        setState(() {
+          _isBackupRestoreLoading = false;
+        });
+      }
+    }
   }
 
+  Future<bool?> _showRestoreConfirmation() {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final colorScheme =
+            Theme.of(dialogContext).colorScheme;
+
+        return AlertDialog(
+          title: const Text(
+            'Restore backup?',
+          ),
+          content: const Text(
+            'Restoring this backup will replace all current PocketDocs documents, folders, and categories with the data in the backup.\n\nThis action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                  false,
+                );
+              },
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+              ),
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                  true,
+                );
+              },
+              child: const Text('Restore'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  String _cleanErrorMessage(Object error) {
+    final message = error.toString();
+
+    if (message.startsWith('Exception: ')) {
+      return message.substring(
+        'Exception: '.length,
+      );
+    }
+
+    return message;
+  }
   void _showComingSoon(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
@@ -501,8 +764,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(fontSize: 11.5),
                   ),
                 ),
-                trailing: const Icon(Icons.chevron_right_rounded, size: 21),
-                onTap: _showAppLockUI,
+                trailing: const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 21,
+                ),             onTap: _showAppLockUI,
               ),
             ],
           ),
@@ -536,8 +801,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(fontSize: 11.5),
                   ),
                 ),
-                trailing: const Icon(Icons.chevron_right_rounded, size: 21),
-                onTap: _backupDocuments,
+                trailing: _isBackupRestoreLoading
+                    ? const SizedBox(
+                  width: 21,
+                  height: 21,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
+                )
+                    : const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 21,
+                ),
+                onTap: _isBackupRestoreLoading
+                    ? null
+                    : _backupDocuments,
               ),
 
               Divider(
@@ -566,8 +844,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(fontSize: 11.5),
                   ),
                 ),
-                trailing: const Icon(Icons.chevron_right_rounded, size: 21),
-                onTap: _restoreBackup,
+                trailing: _isBackupRestoreLoading
+                    ? const SizedBox(
+                  width: 21,
+                  height: 21,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
+                )
+                    : const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 21,
+                ),
+                onTap: _isBackupRestoreLoading
+                    ? null
+                    : _restoreBackup,
               ),
             ],
           ),

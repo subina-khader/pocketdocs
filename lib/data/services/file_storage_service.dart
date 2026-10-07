@@ -55,8 +55,7 @@ class FileStorageService {
 
       final extension = path.extension(sourceFile.path);
 
-      final uniqueFileName =
-          '${uuid.v4()}$extension';
+      final uniqueFileName = '${uuid.v4()}$extension';
 
       final destinationPath = path.join(
         directory.path,
@@ -91,5 +90,45 @@ class FileStorageService {
 
   Future<bool> fileExists(String filePath) async {
     return File(filePath).exists();
+  }
+
+  /// Deletes PocketDocs files that are no longer part of
+  /// the restored database.
+  ///
+  /// Files whose paths are present in [keepPaths] are preserved.
+  Future<void> clearStorageExcept(
+      Set<String> keepPaths,
+      ) async {
+    try {
+      final appDirectory = await _getDocumentsDirectory();
+
+      final storageFolders = [
+        AppConstants.imagesFolder,
+        AppConstants.pdfsFolder,
+      ];
+
+      for (final folderName in storageFolders) {
+        final directory = Directory(
+          path.join(
+            appDirectory.path,
+            folderName,
+          ),
+        );
+
+        if (!await directory.exists()) {
+          continue;
+        }
+
+        await for (final entity in directory.list()) {
+          if (entity is File && !keepPaths.contains(entity.path)) {
+            await entity.delete();
+          }
+        }
+      }
+    } catch (e) {
+      throw FileStorageException(
+        'Failed to clean PocketDocs storage: $e',
+      );
+    }
   }
 }

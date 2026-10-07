@@ -25,7 +25,7 @@ import '../domain/repositories/document_repository.dart';
 import '../domain/repositories/folder_repository.dart';
 
 import '../presentation/features/documents/providers/document_provider.dart';
-
+import '../data/services/backup_restore_service.dart';
 final ServiceLocator sl = ServiceLocator();
 
 Future<void> initializeDependencies() async {
@@ -99,6 +99,17 @@ final categoryRepository = CategoryRepositoryImpl(
 localDataSource: categoryLocalDataSource,
 );
 
+  // -------------------------
+  // Backup & Restore
+  // -------------------------
+
+  final backupRestoreService = BackupRestoreService(
+    databaseHelper: databaseHelper,
+    documentRepository: documentRepository,
+    folderRepository: folderRepository,
+    categoryRepository: categoryRepository,
+    fileStorageService: fileStorageService,
+  );
 // -------------------------
 // Register Singletons
 // -------------------------
@@ -118,7 +129,9 @@ imageCompressionService,
 sl.registerSingleton<DocumentFileService>(
 documentFileService,
 );
-
+sl.registerSingleton<BackupRestoreService>(
+    backupRestoreService,
+  );
 // -------------------------
 // Document Dependencies
 // -------------------------
