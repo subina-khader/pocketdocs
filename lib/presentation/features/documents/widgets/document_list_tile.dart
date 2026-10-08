@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../../domain/entities/document.dart';
 import '../providers/document_provider.dart';
-
+import 'document_image_preview.dart';
 class DocumentListTile extends StatelessWidget {
   final Document document;
   final VoidCallback onTap;
@@ -86,7 +86,9 @@ class DocumentListTile extends StatelessWidget {
 class _Preview extends StatelessWidget {
   final Document document;
 
-  const _Preview({required this.document});
+  const _Preview({
+    required this.document,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -106,20 +108,11 @@ class _Preview extends StatelessWidget {
       );
     }
 
-    return ClipRRect(
+    return DocumentImagePreview(
+      document: document,
+      width: 62,
+      height: 62,
       borderRadius: BorderRadius.circular(15),
-      child: Image.file(
-        File(document.filePath),
-        width: 62,
-        height: 62,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(
-          width: 62,
-          height: 62,
-          color: Theme.of(context).colorScheme.primaryContainer,
-          child: const Icon(Icons.image_not_supported_outlined),
-        ),
-      ),
     );
   }
 }

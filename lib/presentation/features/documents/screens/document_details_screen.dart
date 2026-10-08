@@ -1,5 +1,9 @@
 import 'dart:io';
-
+import 'dart:typed_data';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
+import '../../../../data/services/document_file_service.dart';
+import '../../../../dependency_injection/injection_container.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -18,16 +22,53 @@ class DocumentDetailsScreen extends StatelessWidget {
   // ------------------------------------------------------------
   // SHARE
   // ------------------------------------------------------------
+  Future<Uint8List> _decryptDocument() async {
+    final fileService = sl<DocumentFileService>();
 
+    return fileService.decryptFile(
+      document.filePath,
+    );
+  }
   Future<void> _share(BuildContext context) async {
+    File? tempFile;
+
     try {
-      await Share.shareXFiles([XFile(document.filePath)], text: document.title);
+      final bytes = await _decryptDocument();
+
+      final tempDirectory = await getTemporaryDirectory();
+
+      final extension = document.fileType == DocumentType.pdf
+          ? 'pdf'
+          : 'jpg';
+
+      tempFile = File(
+        path.join(
+          tempDirectory.path,
+          '${document.id ?? DateTime.now().millisecondsSinceEpoch}.$extension',
+        ),
+      );
+
+      await tempFile.writeAsBytes(
+        bytes,
+        flush: true,
+      );
+
+      await Share.shareXFiles(
+        [XFile(tempFile.path)],
+        text: document.title,
+      );
     } catch (e) {
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Unable to share document: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to share document.'),
+        ),
+      );
+    } finally {
+      if (tempFile != null && await tempFile.exists()) {
+        await tempFile.delete();
+      }
     }
   }
 
@@ -36,40 +77,47 @@ class DocumentDetailsScreen extends StatelessWidget {
   // ------------------------------------------------------------
 
   Future<void> _download(BuildContext context) async {
+    File? tempFile;
+
     try {
-      final file = File(document.filePath);
+      final bytes = await _decryptDocument();
 
-      if (!await file.exists()) {
-        if (!context.mounted) return;
+      final tempDirectory = await getTemporaryDirectory();
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Document file not found.')),
-        );
+      final extension = document.fileType == DocumentType.pdf
+          ? 'pdf'
+          : 'jpg';
 
-        return;
-      }
+      final fileName = _getFileNameWithoutExtension(
+        document.title,
+      );
 
-      final extension = _getExtension(document.filePath);
-      final fileName = _getFileNameWithoutExtension(document.filePath);
+      tempFile = File(
+        path.join(
+          tempDirectory.path,
+          '${DateTime.now().millisecondsSinceEpoch}.$extension',
+        ),
+      );
+
+      await tempFile.writeAsBytes(
+        bytes,
+        flush: true,
+      );
 
       if (document.fileType == DocumentType.pdf) {
-        // PDF → Downloads/PocketDocs
         await FileSaver.instance.saveToDownloads(
           name: fileName,
-          filePath: document.filePath,
-          fileExtension: extension.isEmpty ? 'pdf' : extension,
+          filePath: tempFile.path,
+          fileExtension: extension,
           mimeType: MimeType.pdf,
           subfolder: 'PocketDocs',
         );
       } else {
-        // Image → Gallery / Pictures/PocketDocs
-        final mimeType = _getImageMimeType(extension);
-
         await FileSaver.instance.saveToGallery(
           name: fileName,
-          filePath: document.filePath,
-          fileExtension: extension.isEmpty ? 'jpg' : extension,
-          mimeType: mimeType,
+          filePath: tempFile.path,
+          fileExtension: extension,
+          mimeType: MimeType.jpeg,
           album: 'PocketDocs',
         );
       }
@@ -87,11 +135,16 @@ class DocumentDetailsScreen extends StatelessWidget {
       );
     } catch (e) {
       if (!context.mounted) return;
-      print('$e');
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Unable to save document: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to save document.'),
+        ),
+      );
+    } finally {
+      if (tempFile != null && await tempFile.exists()) {
+        await tempFile.delete();
+      }
     }
   }
 
@@ -221,7 +274,10 @@ class DocumentDetailsScreen extends StatelessWidget {
   // FULL SCREEN IMAGE
   // ------------------------------------------------------------
 
-  void _openFullScreenImage(BuildContext context) {
+  void _openFullScreenImage(
+      BuildContext context,
+      Uint8List bytes,
+      ) {
     if (document.fileType != DocumentType.image) {
       return;
     }
@@ -229,7 +285,7 @@ class DocumentDetailsScreen extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => FullScreenImageViewer(
-          imagePath: document.filePath,
+          imageBytes: bytes,
           title: document.title,
         ),
       ),
@@ -377,58 +433,91 @@ class DocumentDetailsScreen extends StatelessWidget {
         border: Border.all(color: borderColor),
       ),
       clipBehavior: Clip.antiAlias,
-      child: document.fileType == DocumentType.pdf
-          ? SfPdfViewer.file(File(document.filePath))
-          : GestureDetector(
-              onTap: () {
-                _openFullScreenImage(context);
-              },
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.file(
-                    File(document.filePath),
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) {
-                      return const Center(
-                        child: Icon(Icons.broken_image_outlined, size: 52),
-                      );
-                    },
-                  ),
+      child: FutureBuilder<Uint8List>(
+        future: _decryptDocument(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
 
-                  // Full screen hint
-                  Positioned(
-                    right: 12,
-                    bottom: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 7,
+          if (snapshot.hasError || !snapshot.hasData) {
+            return const Center(
+              child: Icon(
+                Icons.lock_outline_rounded,
+                size: 52,
+              ),
+            );
+          }
+
+          final bytes = snapshot.data!;
+
+          if (document.fileType == DocumentType.pdf) {
+            return SfPdfViewer.memory(bytes);
+          }
+
+          return GestureDetector(
+            onTap: () {
+              _openFullScreenImage(
+                context,
+                bytes,
+              );
+            },
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.memory(
+                  bytes,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) {
+                    return const Center(
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        size: 52,
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.fullscreen, color: Colors.white, size: 17),
-                          SizedBox(width: 5),
-                          Text(
-                            'Full screen',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
+                    );
+                  },
+                ),
+
+                Positioned(
+                  right: 12,
+                  bottom: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.fullscreen,
+                          color: Colors.white,
+                          size: 17,
+                        ),
+                        SizedBox(width: 5),
+                        Text(
+                          'Full screen',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          );
+        },
+      ),
     );
   }
 }
@@ -489,13 +578,14 @@ class _ActionButton extends StatelessWidget {
 // FULL SCREEN IMAGE VIEWER
 // ============================================================
 
+
 class FullScreenImageViewer extends StatelessWidget {
-  final String imagePath;
+  final Uint8List imageBytes;
   final String title;
 
   const FullScreenImageViewer({
     super.key,
-    required this.imagePath,
+    required this.imageBytes,
     required this.title,
   });
 
@@ -506,14 +596,18 @@ class FullScreenImageViewer extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
       body: Center(
         child: InteractiveViewer(
           minScale: 0.5,
           maxScale: 5,
-          child: Image.file(
-            File(imagePath),
+          child: Image.memory(
+            imageBytes,
             fit: BoxFit.contain,
             errorBuilder: (_, __, ___) {
               return const Center(

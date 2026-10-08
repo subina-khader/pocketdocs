@@ -5,7 +5,7 @@ import '../data/database/database_helper.dart';
 
 import '../data/datasources/category_local_data_source.dart';
 import '../data/datasources/category_local_data_source_impl.dart';
-
+import '../data/services/encryption_service.dart';
 import '../data/datasources/document_local_data_source.dart';
 import '../data/datasources/document_local_data_source_impl.dart';
 
@@ -39,15 +39,17 @@ final databaseHelper = DatabaseHelper();
 // Services
 // -------------------------
 
-final fileStorageService = FileStorageService();
+  final fileStorageService = FileStorageService();
 
-final imageCompressionService =
-ImageCompressionService();
+  final imageCompressionService = ImageCompressionService();
 
-final documentFileService = DocumentFileService(
-fileStorageService: fileStorageService,
-imageCompressionService: imageCompressionService,
-);
+  final encryptionService = EncryptionService();
+
+  final documentFileService = DocumentFileService(
+    fileStorageService: fileStorageService,
+    imageCompressionService: imageCompressionService,
+    encryptionService: encryptionService,
+  );
 
 // -------------------------
 // Document Data Source
@@ -179,6 +181,9 @@ folderRepository: sl<FolderRepository>(),
 categoryRepository: sl<CategoryRepository>(),
 ),
 );
+  sl.registerSingleton<EncryptionService>(
+    encryptionService,
+  );
 }
 
 class ServiceLocator {

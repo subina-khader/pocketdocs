@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../../../domain/entities/document.dart';
 import '../../../../domain/entities/folder.dart';
 import '../providers/document_provider.dart';
+import '../widgets/document_image_preview.dart';
 
 class FolderDocumentSelectionScreen extends StatefulWidget {
 final Folder folder;
@@ -194,34 +195,21 @@ fontWeight: FontWeight.w600,
 }
 
 Widget _buildPreview(Document document) {
-switch (document.fileType) {
-case DocumentType.image:
-final file = File(document.filePath);
+  switch (document.fileType) {
+    case DocumentType.image:
+      return DocumentImagePreview(
+        document: document,
+        width: double.infinity,
+        height: double.infinity,
+        borderRadius: BorderRadius.circular(14),
+      );
 
-if (file.existsSync()) {
-return Image.file(
-file,
-width: double.infinity,
-height: double.infinity,
-fit: BoxFit.cover,
-errorBuilder: (_, __, ___) {
-return const _DocumentPlaceholder(
-icon: Icons.broken_image_outlined,
-);
-},
-);
-}
-
-return const _DocumentPlaceholder(
-icon: Icons.broken_image_outlined,
-);
-
-case DocumentType.pdf:
-return const _DocumentPlaceholder(
-icon: Icons.picture_as_pdf_rounded,
-label: 'PDF',
-);
-}
+    case DocumentType.pdf:
+      return const _DocumentPlaceholder(
+        icon: Icons.picture_as_pdf_rounded,
+        label: 'PDF',
+      );
+  }
 }
 
 @override

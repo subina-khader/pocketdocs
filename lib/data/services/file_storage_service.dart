@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
-
+import 'dart:typed_data';
 import '../../core/constants/app_constants.dart';
 import '../../core/errors/app_exceptions.dart';
 
@@ -73,7 +73,37 @@ class FileStorageService {
       );
     }
   }
+  Future<String> saveEncryptedBytes({
+    required Uint8List encryptedBytes,
+    required bool isPdf,
+    String originalExtension = '.enc',
+  }) async {
+    try {
+      final directory = await _getStorageDirectory(
+        isPdf: isPdf,
+      );
 
+      final uniqueFileName = '${uuid.v4()}$originalExtension';
+
+      final destinationPath = path.join(
+        directory.path,
+        uniqueFileName,
+      );
+
+      final file = File(destinationPath);
+
+      await file.writeAsBytes(
+        encryptedBytes,
+        flush: true,
+      );
+
+      return file.path;
+    } catch (e) {
+      throw FileStorageException(
+        'Failed to save encrypted file: $e',
+      );
+    }
+  }
   Future<void> deleteFile(String filePath) async {
     try {
       final file = File(filePath);

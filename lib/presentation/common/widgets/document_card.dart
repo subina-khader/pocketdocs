@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../../domain/entities/document.dart';
 import '../../features/documents/providers/document_provider.dart';
+import '../../features/documents/widgets/document_image_preview.dart';
 
 class DocumentCard extends StatelessWidget {
   final Document document;
@@ -84,22 +85,11 @@ class _DocumentPreview extends StatelessWidget {
       );
     }
 
-    return ClipRRect(
+    return DocumentImagePreview(
+      document: document,
+      width: 64,
+      height: 64,
       borderRadius: BorderRadius.circular(12),
-      child: Image.file(
-        File(document.filePath),
-        width: 64,
-        height: 64,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) {
-          return Container(
-            width: 64,
-            height: 64,
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: const Icon(Icons.broken_image_outlined),
-          );
-        },
-      ),
     );
   }
 }
