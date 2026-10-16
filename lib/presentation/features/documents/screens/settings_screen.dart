@@ -712,101 +712,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
-  Future<String?> _showRestorePasswordDialog() async {
-    final passwordController =
-    TextEditingController();
-
-    var obscurePassword = true;
-
-    try {
-      return await showDialog<String>(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) {
-          return StatefulBuilder(
-            builder: (
-                context,
-                setState,
-                ) {
-              return AlertDialog(
-                title: const Text(
-                  'Enter backup password',
-                ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Enter the password used when this backup was created.',
-                    ),
-                    const SizedBox(height: 18),
-
-                    TextField(
-                      controller: passwordController,
-                      obscureText: obscurePassword,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        labelText: 'Backup password',
-                        suffixIcon: IconButton(
-                          onPressed: () {
-                            setState(() {
-                              obscurePassword =
-                              !obscurePassword;
-                            });
-                          },
-                          icon: Icon(
-                            obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(
-                        dialogContext,
-                      );
-                    },
-                    child: const Text('Cancel'),
-                  ),
-                  FilledButton(
-                    onPressed: () {
-                      final password =
-                          passwordController.text;
-
-                      if (password.length < 8) {
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Please enter the backup password.',
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-
-                      Navigator.pop(
-                        dialogContext,
-                        password,
-                      );
-                    },
-                    child: const Text('Restore'),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-      );
-    } finally {
-      passwordController.dispose();
-    }
-  }
-  Future<bool?> _showRestoreConfirmation() {
+  Future<String?> _showRestorePasswordDialog() {
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _RestorePasswordDialog(),
+    );
+  }  Future<bool?> _showRestoreConfirmation() {
     return showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -1501,6 +1413,91 @@ class _HelpRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _RestorePasswordDialog extends StatefulWidget {
+  const _RestorePasswordDialog();
+
+  @override
+  State<_RestorePasswordDialog> createState() =>
+      _RestorePasswordDialogState();
+}
+
+class _RestorePasswordDialogState
+    extends State<_RestorePasswordDialog> {
+  final TextEditingController _passwordController =
+  TextEditingController();
+
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _restore() {
+    final password = _passwordController.text;
+
+    if (password.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter the backup password.'),
+        ),
+      );
+      return;
+    }
+
+    Navigator.of(context).pop(password);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      scrollable: true,
+      title: const Text('Enter backup password'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Enter the password used when this backup was created.',
+          ),
+          const SizedBox(height: 18),
+          TextField(
+            controller: _passwordController,
+            obscureText: _obscurePassword,
+            autofocus: true,
+            onSubmitted: (_) => _restore(),
+            decoration: InputDecoration(
+              labelText: 'Backup password',
+              suffixIcon: IconButton(
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+                icon: Icon(
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _restore,
+          child: const Text('Restore'),
+        ),
+      ],
     );
   }
 }
