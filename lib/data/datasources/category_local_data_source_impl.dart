@@ -1,5 +1,4 @@
-import 'package:sqflite/sqflite.dart';
-
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import '../database/database_helper.dart';
 import '../models/category_model.dart';
 import '../../core/constants/database_constants.dart';

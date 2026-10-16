@@ -1,31 +1,34 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'dart:typed_data';
+import '../../domain/entities/document.dart';
 import 'package:archive/archive.dart';
 import 'package:archive/archive_io.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
-import 'package:sqflite/sqflite.dart';
-
+import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:flutter/foundation.dart';
 import '../../core/constants/database_constants.dart';
 import '../../domain/repositories/category_repository.dart';
 import '../../domain/repositories/document_repository.dart';
 import '../../domain/repositories/folder_repository.dart';
 import '../database/database_helper.dart';
-import '../models/category_model.dart';
 import '../models/document_model.dart';
-import '../models/folder_model.dart';
+import 'backup_encryption_service.dart';
+import 'document_file_service.dart';
 import 'file_storage_service.dart';
 
 class BackupRestoreService {
   static const String _format = 'pocketdocs';
-  static const int _version = 1;
+  static const int _version = 2;
 
   final DatabaseHelper databaseHelper;
   final DocumentRepository documentRepository;
   final FolderRepository folderRepository;
   final CategoryRepository categoryRepository;
   final FileStorageService fileStorageService;
+  final DocumentFileService documentFileService;
+  final BackupEncryptionService backupEncryptionService;
 
   BackupRestoreService({
     required this.databaseHelper,
@@ -33,33 +36,46 @@ class BackupRestoreService {
     required this.folderRepository,
     required this.categoryRepository,
     required this.fileStorageService,
+    required this.documentFileService,
+    required this.backupEncryptionService,
   });
 
   // ===========================================================================
   // CREATE BACKUP
   // ===========================================================================
 
-  Future<File> createBackup() async {
+  Future<File> createBackup({
+    required String password,
+  }) async {
     final documents = await documentRepository.getDocuments();
     final folders = await folderRepository.getFolders();
     final categories = await categoryRepository.getCategories();
 
     final tempDirectory = await getTemporaryDirectory();
 
-    final backupFile = File(
+    final timestamp = _timestamp();
+
+    final zipFile = File(
       path.join(
         tempDirectory.path,
-        'PocketDocs_Backup_${_timestamp()}.pocketdocs',
+        'PocketDocs_Backup_$timestamp.zip',
       ),
     );
 
-    final encoder = ZipFileEncoder();
+    final backupFile = File(
+      path.join(
+        tempDirectory.path,
+        'PocketDocs_Backup_$timestamp.pocketdocs',
+      ),
+    );
 
-    encoder.create(backupFile.path);
+    final temporaryPlaintextFiles = <File>[];
+
+    final encoder = ZipFileEncoder();
 
     try {
       // -----------------------------------------------------------------------
-      // Validate all document files before creating the backup.
+      // Validate all document files first.
       // -----------------------------------------------------------------------
 
       for (final document in documents) {
@@ -79,8 +95,10 @@ class BackupRestoreService {
       }
 
       // -----------------------------------------------------------------------
-      // Manifest
+      // Create ZIP.
       // -----------------------------------------------------------------------
+
+      encoder.create(zipFile.path);
 
       final manifest = {
         'format': _format,
@@ -100,7 +118,7 @@ class BackupRestoreService {
       );
 
       // -----------------------------------------------------------------------
-      // Metadata
+      // Metadata.
       // -----------------------------------------------------------------------
 
       final data = {
@@ -122,7 +140,9 @@ class BackupRestoreService {
         }).toList(),
 
         'documents': documents.map((document) {
-          final extension = path.extension(document.filePath);
+          final extension = document.fileType == DocumentType.pdf
+              ? '.pdf'
+              : '.jpg';
 
           return {
             'id': document.id,
@@ -144,19 +164,44 @@ class BackupRestoreService {
       );
 
       // -----------------------------------------------------------------------
-      // Document files
+      // Add decrypted document files to ZIP.
+      //
+      // The local .enc files are decrypted temporarily because the local
+      // encryption key is device-specific and must NOT be stored in backup.
       // -----------------------------------------------------------------------
 
       for (final document in documents) {
-        final file = File(document.filePath);
+        final id = document.id!;
 
-        final extension = path.extension(document.filePath);
+        final isPdf = document.fileType == DocumentType.pdf;
 
-        final backupFileName =
-            'files/${document.id}$extension';
+        final extension = isPdf ? '.pdf' : '.jpg';
+
+        final backupFileName = 'files/$id$extension';
+
+        final encryptedOrPlainBytes =
+        await documentFileService.decryptFile(
+          document.filePath,
+        );
+
+        final temporaryPlaintextFile = File(
+          path.join(
+            tempDirectory.path,
+            'pocketdocs_plain_${DateTime.now().microsecondsSinceEpoch}_$id$extension',
+          ),
+        );
+
+        await temporaryPlaintextFile.writeAsBytes(
+          encryptedOrPlainBytes,
+          flush: true,
+        );
+
+        temporaryPlaintextFiles.add(
+          temporaryPlaintextFile,
+        );
 
         await encoder.addFile(
-          file,
+          temporaryPlaintextFile,
           backupFileName,
         );
       }
@@ -164,21 +209,62 @@ class BackupRestoreService {
       await encoder.close();
     }
 
-    return backupFile;
+    try {
+      // -----------------------------------------------------------------------
+      // Read completed ZIP.
+      // -----------------------------------------------------------------------
+
+      final zipBytes = await zipFile.readAsBytes();
+
+      // -----------------------------------------------------------------------
+      // Encrypt entire ZIP using the user backup password.
+      // -----------------------------------------------------------------------
+
+      final encryptedBackup =
+      await backupEncryptionService.encrypt(
+        data: Uint8List.fromList(zipBytes),
+        password: password,
+      );
+
+      await backupFile.writeAsBytes(
+        encryptedBackup,
+        flush: true,
+      );
+
+      return backupFile;
+    } finally {
+      // -----------------------------------------------------------------------
+      // Delete temporary plaintext document files.
+      // -----------------------------------------------------------------------
+
+      for (final file in temporaryPlaintextFiles) {
+        try {
+          if (await file.exists()) {
+            await file.delete();
+          }
+        } catch (_) {}
+      }
+
+      // -----------------------------------------------------------------------
+      // Delete temporary ZIP.
+      // -----------------------------------------------------------------------
+
+      try {
+        if (await zipFile.exists()) {
+          await zipFile.delete();
+        }
+      } catch (_) {}
+    }
   }
 
   // ===========================================================================
   // RESTORE BACKUP
   // ===========================================================================
 
-  Future<void> restoreBackup(File backupFile) async {
-    print('========== BACKUP RESTORE SERVICE ==========');
-    print('Received backup path: ${backupFile.path}');
-    print('Backup exists: ${await backupFile.exists()}');
-
-    if (await backupFile.exists()) {
-      print('Backup size: ${await backupFile.length()} bytes');
-    }
+  Future<void> restoreBackup({
+    required File backupFile,
+    required String password,
+  }) async {
     final tempDirectory = await getTemporaryDirectory();
 
     final restoreDirectory = await Directory(
@@ -188,33 +274,78 @@ class BackupRestoreService {
       ),
     ).create(recursive: true);
 
+    final decryptedZipFile = File(
+      path.join(
+        restoreDirectory.path,
+        'backup.zip',
+      ),
+    );
+
     final restoredFiles = <String, String>{};
 
+    var databaseRestoreSucceeded = false;
+
     try {
-      // -------------------------------------------------------------------------
-      // Decode archive
-      // -------------------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      // Read encrypted backup.
+      // -----------------------------------------------------------------------
 
-      final input = InputFileStream(backupFile.path);
-      print('Attempting to decode backup as ZIP archive...');
-      final archive = ZipDecoder().decodeStream(input);
-      print('ZIP archive decoded successfully.');
-      print('Archive entries: ${archive.length}');
+      debugPrint('[BACKUP SERVICE] File: ${backupFile.path}');
+      debugPrint('[BACKUP SERVICE] Exists: ${await backupFile.exists()}');
 
-      for (final entry in archive) {
-        print('Archive entry: ${entry.name}');
-      }
-      await input.close();
+      final encryptedBytes = await backupFile.readAsBytes();
 
-      // -------------------------------------------------------------------------
-      // Validate archive structure
-      // -------------------------------------------------------------------------
+      debugPrint(
+        '[BACKUP SERVICE] Read ${encryptedBytes.length} encrypted bytes.',
+      );
+      debugPrint(
+        '[BACKUP SERVICE] Header bytes: '
+            '${encryptedBytes.take(5).toList()}',
+      );
+      // -----------------------------------------------------------------------
+      // Decrypt backup using supplied password.
+      // -----------------------------------------------------------------------
+      debugPrint('[BACKUP SERVICE] Starting password-based decryption.');
+
+      final zipBytes = await backupEncryptionService.decrypt(
+        encryptedData: Uint8List.fromList(encryptedBytes),
+        password: password,
+      );
+      debugPrint(
+        '[BACKUP SERVICE] Decryption successful. '
+            'Decrypted ZIP size: ${zipBytes.length} bytes.',
+      );
+      await decryptedZipFile.writeAsBytes(
+        zipBytes,
+        flush: true,
+      );
+
+      // -----------------------------------------------------------------------
+      // Decode ZIP.
+      // -----------------------------------------------------------------------
+      debugPrint('[BACKUP SERVICE] Decoding ZIP archive.');
+
+      final archive = ZipDecoder().decodeBytes(
+        zipBytes,
+      );
+      debugPrint(
+        '[BACKUP SERVICE] ZIP entries: '
+            '${archive.map((entry) => entry.name).toList()}',
+      );
+
+      debugPrint('[BACKUP SERVICE] Validating archive.');
+      _validateArchive(archive);
+      debugPrint('[BACKUP SERVICE] Archive validation passed.');
+
+      // -----------------------------------------------------------------------
+      // Validate archive.
+      // -----------------------------------------------------------------------
 
       _validateArchive(archive);
 
-      // -------------------------------------------------------------------------
-      // Extract archive
-      // -------------------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      // Extract archive.
+      // -----------------------------------------------------------------------
 
       await extractArchiveToDisk(
         archive,
@@ -223,9 +354,9 @@ class BackupRestoreService {
 
       archive.clear();
 
-      // -------------------------------------------------------------------------
-      // Read metadata
-      // -------------------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      // Read manifest and data.
+      // -----------------------------------------------------------------------
 
       final manifestFile = File(
         path.join(
@@ -251,10 +382,6 @@ class BackupRestoreService {
 
       _validateManifest(manifest);
 
-      // -------------------------------------------------------------------------
-      // Read backup data
-      // -------------------------------------------------------------------------
-
       final categories =
       List<Map<String, dynamic>>.from(
         (data['categories'] as List).map(
@@ -276,21 +403,18 @@ class BackupRestoreService {
         ),
       );
 
-      // -------------------------------------------------------------------------
-      // Validate referenced document files
-      // -------------------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      // Validate document references before touching current database.
+      // -----------------------------------------------------------------------
 
       await _validateDocuments(
         documents,
         restoreDirectory,
       );
 
-      // -------------------------------------------------------------------------
-      // Save restored files
-      //
-      // IMPORTANT:
-      // We save them before touching the existing database.
-      // -------------------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      // Re-encrypt every document using this installation's new local key.
+      // -----------------------------------------------------------------------
 
       for (final document in documents) {
         final backupFileName =
@@ -306,7 +430,7 @@ class BackupRestoreService {
         final isPdf = document['fileType'] == 'pdf';
 
         final restoredPath =
-        await fileStorageService.saveFile(
+        await documentFileService.processAndSave(
           sourceFile: extractedFile,
           isPdf: isPdf,
         );
@@ -314,15 +438,16 @@ class BackupRestoreService {
         restoredFiles[backupFileName] = restoredPath;
       }
 
-      // -------------------------------------------------------------------------
-      // Replace current database
-      // -------------------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      // Replace current database.
+      // -----------------------------------------------------------------------
 
       final db = await databaseHelper.database;
 
       await db.transaction((txn) async {
-        // Documents reference categories and folders,
-        // so delete documents first.
+        // Documents reference categories and folders.
+        // Delete documents first.
+
         await txn.delete(
           DatabaseConstants.documentsTable,
         );
@@ -335,9 +460,9 @@ class BackupRestoreService {
           DatabaseConstants.categoriesTable,
         );
 
-        // -----------------------------------------------------------------------
-        // Restore categories
-        // -----------------------------------------------------------------------
+        // ---------------------------------------------------------------------
+        // Restore categories.
+        // ---------------------------------------------------------------------
 
         final categoryIdMap = <int, int>{};
 
@@ -361,9 +486,9 @@ class BackupRestoreService {
           }
         }
 
-        // -----------------------------------------------------------------------
-        // Restore folders
-        // -----------------------------------------------------------------------
+        // ---------------------------------------------------------------------
+        // Restore folders.
+        // ---------------------------------------------------------------------
 
         final folderIdMap = <int, int>{};
 
@@ -385,9 +510,9 @@ class BackupRestoreService {
           }
         }
 
-        // -----------------------------------------------------------------------
-        // Restore documents
-        // -----------------------------------------------------------------------
+        // ---------------------------------------------------------------------
+        // Restore documents.
+        // ---------------------------------------------------------------------
 
         for (final document in documents) {
           final oldCategoryId =
@@ -438,43 +563,49 @@ class BackupRestoreService {
         }
       });
 
-      // -------------------------------------------------------------------------
-      // Database restore succeeded.
-      //
-      // Now remove old/orphaned PocketDocs files while keeping
-      // the newly restored files.
-      // -------------------------------------------------------------------------
+      databaseRestoreSucceeded = true;
+
+      // -----------------------------------------------------------------------
+      // Delete old/orphaned PocketDocs files.
+      // -----------------------------------------------------------------------
 
       await fileStorageService.clearStorageExcept(
         restoredFiles.values.toSet(),
       );
     } catch (e) {
-      // -------------------------------------------------------------------------
-      // Restore failed.
+      // -----------------------------------------------------------------------
+      // IMPORTANT:
       //
-      // Delete only the files that we created during this restore attempt.
-      // Existing PocketDocs files remain untouched.
-      // -------------------------------------------------------------------------
+      // If the database transaction already succeeded, do NOT delete the
+      // restored files even if the final storage cleanup failed.
+      // -----------------------------------------------------------------------
 
-      for (final restoredPath in restoredFiles.values) {
-        await fileStorageService.deleteFile(
-          restoredPath,
-        );
+      if (!databaseRestoreSucceeded) {
+        for (final restoredPath in restoredFiles.values) {
+          try {
+            await fileStorageService.deleteFile(
+              restoredPath,
+            );
+          } catch (_) {}
+        }
       }
 
       rethrow;
     } finally {
-      // -------------------------------------------------------------------------
-      // Remove temporary extracted backup files.
-      // -------------------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      // Delete temporary restore directory.
+      // -----------------------------------------------------------------------
 
       if (await restoreDirectory.exists()) {
-        await restoreDirectory.delete(
-          recursive: true,
-        );
+        try {
+          await restoreDirectory.delete(
+            recursive: true,
+          );
+        } catch (_) {}
       }
     }
   }
+
   // ===========================================================================
   // VALIDATION
   // ===========================================================================
@@ -553,6 +684,14 @@ class BackupRestoreService {
       if (!await file.exists()) {
         throw Exception(
           'A document file is missing from the backup.',
+        );
+      }
+
+      final fileType = document['fileType'];
+
+      if (fileType != 'image' && fileType != 'pdf') {
+        throw Exception(
+          'Unsupported document file type.',
         );
       }
     }

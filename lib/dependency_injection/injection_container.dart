@@ -5,6 +5,7 @@ import '../data/database/database_helper.dart';
 
 import '../data/datasources/category_local_data_source.dart';
 import '../data/datasources/category_local_data_source_impl.dart';
+import '../data/services/backup_encryption_service.dart';
 import '../data/services/encryption_service.dart';
 import '../data/datasources/document_local_data_source.dart';
 import '../data/datasources/document_local_data_source_impl.dart';
@@ -23,7 +24,7 @@ import '../data/services/image_compression_service.dart';
 import '../domain/repositories/category_repository.dart';
 import '../domain/repositories/document_repository.dart';
 import '../domain/repositories/folder_repository.dart';
-
+import '../data/services/database_key_service.dart';
 import '../presentation/features/documents/providers/document_provider.dart';
 import '../data/services/backup_restore_service.dart';
 final ServiceLocator sl = ServiceLocator();
@@ -33,8 +34,11 @@ Future<void> initializeDependencies() async {
 // Database
 // -------------------------
 
-final databaseHelper = DatabaseHelper();
+  final databaseKeyService = DatabaseKeyService();
 
+  final databaseHelper = DatabaseHelper(
+    databaseKeyService: databaseKeyService,
+  );
 // -------------------------
 // Services
 // -------------------------
@@ -105,21 +109,28 @@ localDataSource: categoryLocalDataSource,
   // Backup & Restore
   // -------------------------
 
+  final backupEncryptionService = BackupEncryptionService();
+
   final backupRestoreService = BackupRestoreService(
     databaseHelper: databaseHelper,
     documentRepository: documentRepository,
     folderRepository: folderRepository,
     categoryRepository: categoryRepository,
     fileStorageService: fileStorageService,
+    documentFileService: documentFileService,
+    backupEncryptionService: backupEncryptionService,
   );
 // -------------------------
 // Register Singletons
 // -------------------------
 
-sl.registerSingleton<DatabaseHelper>(
-databaseHelper,
-);
+  sl.registerSingleton<DatabaseKeyService>(
+    databaseKeyService,
+  );
 
+  sl.registerSingleton<DatabaseHelper>(
+    databaseHelper,
+  );
 sl.registerSingleton<FileStorageService>(
 fileStorageService,
 );

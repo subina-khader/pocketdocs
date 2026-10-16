@@ -335,55 +335,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _backupDocuments() async {
     if (_isBackupRestoreLoading) return;
 
+    final password = await _showBackupPasswordDialog();
+
+    if (password == null || !mounted) {
+      return;
+    }
+
     setState(() {
       _isBackupRestoreLoading = true;
     });
 
-    print('========== POCKETDOCS BACKUP START ==========');
-
     try {
       final backupService = sl<BackupRestoreService>();
 
-      print('Creating backup...');
-
-      final backupFile = await backupService.createBackup();
-
-      print('Backup created.');
-      print('Backup path: ${backupFile.path}');
-      print('Backup name: ${path.basename(backupFile.path)}');
-      print('Backup extension: ${path.extension(backupFile.path)}');
-      print('Backup exists: ${await backupFile.exists()}');
-      print('Backup size: ${await backupFile.length()} bytes');
+      final backupFile = await backupService.createBackup(
+        password: password,
+      );
 
       if (!mounted) return;
-
-      print('Opening share sheet...');
 
       await Share.shareXFiles(
         [
           XFile(backupFile.path),
         ],
-        text: 'PocketDocs backup',
+        text: 'PocketDocs encrypted backup',
         subject: 'PocketDocs Backup',
       );
-
-      print('Share.shareXFiles completed.');
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Backup created successfully.'),
+          content: Text(
+            'Encrypted backup created successfully.',
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
-
-      print('Backup success SnackBar shown.');
-    } catch (e, stackTrace) {
-      print('========== BACKUP ERROR ==========');
-      print('Error: $e');
-      print('StackTrace: $stackTrace');
-
+    } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -395,8 +384,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
     } finally {
-      print('========== POCKETDOCS BACKUP END ==========');
-
       if (mounted) {
         setState(() {
           _isBackupRestoreLoading = false;
@@ -406,122 +393,180 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     }
   }
-  Future<void> _restoreBackup() async {
-    if (_isBackupRestoreLoading) return;
 
-    print('========== POCKETDOCS RESTORE START ==========');
+  Future<void> _restoreBackup() async {
+    if (_isBackupRestoreLoading) {
+      debugPrint('[RESTORE] Already running. Ignoring request.');
+      return;
+    }
+
+    debugPrint('[RESTORE] ===== RESTORE STARTED =====');
 
     try {
-      print('Opening file picker...');
+      debugPrint('[RESTORE] Opening file picker...');
 
       final result = await FilePicker.platform.pickFiles(
         type: FileType.any,
-        withData: false,
+        allowMultiple: false,
       );
 
       if (result == null) {
-        print('File picker cancelled.');
+        debugPrint('[RESTORE] File picker cancelled.');
         return;
       }
 
-      print('File picker returned.');
-      print('Number of files: ${result.files.length}');
+      if (result.files.isEmpty) {
+        debugPrint('[RESTORE] No files returned.');
+        return;
+      }
 
       final pickedFile = result.files.single;
+      final fileName = pickedFile.name;
+      final filePath = pickedFile.path;
 
-      print('---------------- PICKED FILE DEBUG ----------------');
-      print('File name: ${pickedFile.name}');
-      print('File path: ${pickedFile.path}');
-      print('File extension: ${path.extension(pickedFile.name)}');
-      print('File size from picker: ${pickedFile.size}');
-      print('Bytes available: ${pickedFile.bytes != null}');
-      print('Identifier: ${pickedFile.identifier}');
-      print('---------------- END PICKED FILE DEBUG ----------------');
+      debugPrint('[RESTORE] Selected name: "$fileName"');
+      debugPrint('[RESTORE] Selected path: "$filePath"');
+      debugPrint('[RESTORE] Extension: "${path.extension(fileName)}"');
+      debugPrint('[RESTORE] File size from picker: ${pickedFile.size} bytes');
 
-      if (pickedFile.path == null) {
-        print('ERROR: FilePicker returned null path.');
-        throw Exception('Unable to access the selected backup file.');
+      if (filePath == null || filePath.isEmpty) {
+        debugPrint('[RESTORE] ERROR: Picker returned no usable file path.');
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Cannot access this file. Select a local .pocketdocs backup.',
+              ),
+            ),
+          );
+        }
+        return;
       }
 
-      final file = File(pickedFile.path!);
+      final file = File(filePath);
+      final exists = await file.exists();
 
-      print('Actual File path: ${file.path}');
-      print('Actual file exists: ${await file.exists()}');
+      debugPrint('[RESTORE] File exists: $exists');
 
-      if (await file.exists()) {
-        print('Actual file size: ${await file.length()} bytes');
+      if (!exists) {
+        debugPrint('[RESTORE] ERROR: Selected file does not exist at path.');
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Cannot access the selected backup file.'),
+            ),
+          );
+        }
+        return;
       }
 
-      print(
-        'Filename ends with .pocketdocs: '
-            '${pickedFile.name.toLowerCase().endsWith('.pocketdocs')}',
+      final actualLength = await file.length();
+      debugPrint('[RESTORE] Actual file size: $actualLength bytes');
+
+      if (actualLength == 0) {
+        debugPrint('[RESTORE] ERROR: Selected file is empty.');
+        return;
+      }
+
+      final header = await file.openRead(0, 5).fold<List<int>>(
+        <int>[],
+            (previous, bytes) => previous..addAll(bytes),
       );
 
-      print(
-        'Path ends with .pocketdocs: '
-            '${file.path.toLowerCase().endsWith('.pocketdocs')}',
-      );
+      debugPrint('[RESTORE] Backup header: $header');
 
-      // TEMPORARILY DO NOT REJECT BASED ON EXTENSION.
-      //
-      // We will let BackupRestoreService inspect the actual archive.
-      // This is more reliable for files coming from Google Drive.
+      const expectedHeader = [0x50, 0x44, 0x42, 0x4B, 0x02];
+
+      if (header.length != expectedHeader.length ||
+          !List.generate(
+            expectedHeader.length,
+                (index) => header[index] == expectedHeader[index],
+          ).every((matches) => matches)) {
+        debugPrint('[RESTORE] Invalid backup file header.');
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'This file is not a valid PocketDocs backup.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      debugPrint('[RESTORE] Backup header validated.');
+
+      debugPrint('[RESTORE] Extension validation passed.');
 
       if (!mounted) return;
 
-      print('Showing restore confirmation...');
-
       final confirmed = await _showRestoreConfirmation();
 
-      print('Restore confirmation result: $confirmed');
-
       if (confirmed != true || !mounted) {
-        print('Restore cancelled by user.');
+        debugPrint('[RESTORE] User cancelled confirmation.');
         return;
       }
+
+      debugPrint('[RESTORE] Asking for backup password.');
+
+      final password = await _showRestorePasswordDialog();
+
+      if (password == null || !mounted) {
+        debugPrint('[RESTORE] Password dialog cancelled.');
+        return;
+      }
+
+      debugPrint('[RESTORE] Password entered. Value not logged.');
 
       setState(() {
         _isBackupRestoreLoading = true;
       });
 
-      print('Calling BackupRestoreService.restoreBackup()...');
-      print('Restore file: ${file.path}');
+      debugPrint('[RESTORE] Getting BackupRestoreService.');
 
       final backupService = sl<BackupRestoreService>();
 
-      await backupService.restoreBackup(file);
+      debugPrint('[RESTORE] Calling restoreBackup()...');
 
-      print('restoreBackup() completed successfully.');
+      await backupService.restoreBackup(
+        backupFile: file,
+        password: password,
+      );
+
+      debugPrint('[RESTORE] restoreBackup() completed successfully.');
 
       if (!mounted) return;
 
       final provider = context.read<DocumentProvider>();
 
-      print('Reloading documents...');
+      debugPrint('[RESTORE] Reloading documents...');
       await provider.loadDocuments();
 
-      print('Reloading folders...');
+      debugPrint('[RESTORE] Reloading folders...');
       await provider.loadFolders();
 
-      print('Reloading categories...');
+      debugPrint('[RESTORE] Reloading categories...');
       await provider.loadCategories();
 
       await _loadStorage();
+
+      debugPrint('[RESTORE] ===== RESTORE COMPLETED =====');
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Backup restored successfully.'),
+          content: Text('Encrypted backup restored successfully.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
-
-      print('Restore success SnackBar shown.');
     } catch (e, stackTrace) {
-      print('========== RESTORE ERROR ==========');
-      print('Error: $e');
-      print('StackTrace: $stackTrace');
+      debugPrint('[RESTORE] ERROR: $e');
+      debugPrint('[RESTORE] STACK TRACE: $stackTrace');
 
       if (!mounted) return;
 
@@ -530,20 +575,237 @@ class _SettingsScreenState extends State<SettingsScreen> {
           content: Text(
             'Restore failed: ${_cleanErrorMessage(e)}',
           ),
+          duration: const Duration(seconds: 8),
           behavior: SnackBarBehavior.floating,
         ),
       );
     } finally {
-      print('========== POCKETDOCS RESTORE END ==========');
-
       if (mounted) {
         setState(() {
           _isBackupRestoreLoading = false;
         });
       }
+
+      debugPrint('[RESTORE] ===== RESTORE FLOW ENDED =====');
     }
   }
 
+  Future<String?> _showBackupPasswordDialog() {
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        final passwordController = TextEditingController();
+        final confirmPasswordController = TextEditingController();
+
+        bool obscurePassword = true;
+        bool obscureConfirmPassword = true;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Create encrypted backup'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Set a password for this backup. '
+                          'You will need this password to restore it.',
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    TextField(
+                      controller: passwordController,
+                      obscureText: obscurePassword,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        labelText: 'Backup password',
+                        hintText: 'Minimum 8 characters',
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              obscurePassword = !obscurePassword;
+                            });
+                          },
+                          icon: Icon(
+                            obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: confirmPasswordController,
+                      obscureText: obscureConfirmPassword,
+                      decoration: InputDecoration(
+                        labelText: 'Confirm password',
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              obscureConfirmPassword =
+                              !obscureConfirmPassword;
+                            });
+                          },
+                          icon: Icon(
+                            obscureConfirmPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+
+                FilledButton(
+                  onPressed: () {
+                    final password =
+                    passwordController.text.trim();
+
+                    final confirmPassword =
+                    confirmPasswordController.text.trim();
+
+                    if (password.length < 8) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Password must be at least 8 characters.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (password != confirmPassword) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Passwords do not match.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+
+                    Navigator.of(dialogContext).pop(password);
+                  },
+                  child: const Text('Create backup'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+  Future<String?> _showRestorePasswordDialog() async {
+    final passwordController =
+    TextEditingController();
+
+    var obscurePassword = true;
+
+    try {
+      return await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return StatefulBuilder(
+            builder: (
+                context,
+                setState,
+                ) {
+              return AlertDialog(
+                title: const Text(
+                  'Enter backup password',
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Enter the password used when this backup was created.',
+                    ),
+                    const SizedBox(height: 18),
+
+                    TextField(
+                      controller: passwordController,
+                      obscureText: obscurePassword,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        labelText: 'Backup password',
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              obscurePassword =
+                              !obscurePassword;
+                            });
+                          },
+                          icon: Icon(
+                            obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(
+                        dialogContext,
+                      );
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    onPressed: () {
+                      final password =
+                          passwordController.text;
+
+                      if (password.length < 8) {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Please enter the backup password.',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+
+                      Navigator.pop(
+                        dialogContext,
+                        password,
+                      );
+                    },
+                    child: const Text('Restore'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      passwordController.dispose();
+    }
+  }
   Future<bool?> _showRestoreConfirmation() {
     return showDialog<bool>(
       context: context,
