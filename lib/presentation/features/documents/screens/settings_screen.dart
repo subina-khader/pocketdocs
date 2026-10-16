@@ -867,52 +867,85 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+
   void _showHowItWorks() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (_) => const SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(20, 8, 20, 30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'How PocketDocs works',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-              ),
-              SizedBox(height: 18),
-              _HelpRow(
-                icon: Icons.add_a_photo_outlined,
-                title: 'Add',
-                text:
-                'Capture an image or choose an image/PDF from your device.',
-              ),
-              _HelpRow(
-                icon: Icons.folder_copy_outlined,
-                title: 'Organize',
-                text:
-                'Give the document a title and category so it is easy to find.',
-              ),
-              _HelpRow(
-                icon: Icons.search_rounded,
-                title: 'Find',
-                text:
-                'Use Documents to search, filter and sort your saved files.',
-              ),
-              _HelpRow(
-                icon: Icons.shield_outlined,
-                title: 'Offline',
-                text:
-                'Documents and metadata are stored locally on this device.',
-              ),
-            ],
+      isScrollControlled: true,
+      builder: (_) => SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'How PocketDocs works',
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Your personal space for storing and managing documents.',
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                const _HelpRow(
+                  icon: Icons.add_a_photo_outlined,
+                  title: 'Add documents',
+                  text:
+                  'Capture images or import PDFs and images '
+                      'from your device.',
+                ),
+                const _HelpRow(
+                  icon: Icons.folder_copy_outlined,
+                  title: 'Organize your files',
+                  text:
+                  'Add titles, assign categories, and arrange '
+                      'documents into folders.',
+                ),
+                const _HelpRow(
+                  icon: Icons.search_rounded,
+                  title: 'Find and manage',
+                  text:
+                  'Search, filter, preview, share, and manage '
+                      'your saved documents.',
+                ),
+                const _HelpRow(
+                  icon: Icons.shield_outlined,
+                  title: 'Keep documents private',
+                  text:
+                  'Your documents stay on your device. Enable '
+                      'App Lock for an additional layer of protection.',
+                ),
+                const _HelpRow(
+                  icon: Icons.backup_outlined,
+                  title: 'Back up and restore',
+                  text:
+                  'Create a password-protected backup and '
+                      'restore your documents when needed.',
+                ),
+
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
