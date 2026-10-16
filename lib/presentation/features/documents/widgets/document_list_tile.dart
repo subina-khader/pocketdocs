@@ -7,6 +7,8 @@ import '../../../../core/utils/date_utils.dart';
 import '../../../../domain/entities/document.dart';
 import '../providers/document_provider.dart';
 import 'document_image_preview.dart';
+import 'document_preview.dart';
+
 class DocumentListTile extends StatelessWidget {
   final Document document;
   final VoidCallback onTap;
@@ -32,7 +34,7 @@ class DocumentListTile extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              _Preview(document: document),
+              DocumentPreview (document: document),
 
               const SizedBox(width: 13),
 
@@ -83,36 +85,3 @@ class DocumentListTile extends StatelessWidget {
   }
 }
 
-class _Preview extends StatelessWidget {
-  final Document document;
-
-  const _Preview({
-    required this.document,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (document.fileType == DocumentType.pdf) {
-      return Container(
-        width: 62,
-        height: 62,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primaryContainer,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Icon(
-          Icons.picture_as_pdf_rounded,
-          color: Theme.of(context).colorScheme.primary,
-          size: 30,
-        ),
-      );
-    }
-
-    return DocumentImagePreview(
-      document: document,
-      width: 62,
-      height: 62,
-      borderRadius: BorderRadius.circular(15),
-    );
-  }
-}

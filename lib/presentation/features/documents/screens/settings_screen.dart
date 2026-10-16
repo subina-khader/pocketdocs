@@ -5,6 +5,12 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../../data/services/backup_restore_service.dart';
 import '../../../../dependency_injection/injection_container.dart';
+import '../widgets/help_row.dart';
+import '../widgets/restore_password_dialog.dart';
+import '../widgets/security_option_tile.dart';
+import '../widgets/settings_card.dart';
+import '../widgets/settings_icon_box.dart';
+import '../widgets/settings_section_title.dart';
 import 'pin_setup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -185,7 +191,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                _SecurityOptionTile(
+                SecurityOptionTile(
                   icon: Icons.fingerprint_rounded,
                   title: deviceIsActive
                       ? 'Disable Device Authentication'
@@ -209,7 +215,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
                 const SizedBox(height: 8),
-                _SecurityOptionTile(
+                SecurityOptionTile(
                   icon: Icons.pin_outlined,
                   title: pinIsActive
                       ? 'Change PocketDocs PIN'
@@ -753,7 +759,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const _RestorePasswordDialog(),
+      builder: (_) => const RestorePasswordDialog(),
     );
   }  Future<bool?> _showRestoreConfirmation() {
     return showDialog<bool>(
@@ -901,35 +907,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                const _HelpRow(
+                const HelpRow(
                   icon: Icons.add_a_photo_outlined,
                   title: 'Add documents',
                   text:
                   'Capture images or import PDFs and images '
                       'from your device.',
                 ),
-                const _HelpRow(
+                const HelpRow(
                   icon: Icons.folder_copy_outlined,
                   title: 'Organize your files',
                   text:
                   'Add titles, assign categories, and arrange '
                       'documents into folders.',
                 ),
-                const _HelpRow(
+                const HelpRow(
                   icon: Icons.search_rounded,
                   title: 'Find and manage',
                   text:
                   'Search, filter, preview, share, and manage '
                       'your saved documents.',
                 ),
-                const _HelpRow(
+                const HelpRow(
                   icon: Icons.shield_outlined,
                   title: 'Keep documents private',
                   text:
                   'Your documents stay on your device. Enable '
                       'App Lock for an additional layer of protection.',
                 ),
-                const _HelpRow(
+                const HelpRow(
                   icon: Icons.backup_outlined,
                   title: 'Back up and restore',
                   text:
@@ -984,16 +990,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // ----------------------------------------------------------
           // SECURITY
           // ----------------------------------------------------------
-          const _SectionTitle('SECURITY'),
+          const SectionTitle('SECURITY'),
 
-          _SettingsCard(
+          SettingsCard(
             children: [
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 5,
                 ),
-                leading: _IconBox(
+                leading: IconBox(
                   icon: Icons.lock_outline_rounded,
                   color: colorScheme.primary,
                 ),
@@ -1021,16 +1027,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // ----------------------------------------------------------
           // BACKUP & RESTORE
           // ----------------------------------------------------------
-          const _SectionTitle('BACKUP & RESTORE'),
+          const SectionTitle('BACKUP & RESTORE'),
 
-          _SettingsCard(
+          SettingsCard(
             children: [
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 5,
                 ),
-                leading: _IconBox(
+                leading: IconBox(
                   icon: Icons.backup_outlined,
                   color: colorScheme.primary,
                 ),
@@ -1073,7 +1079,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   horizontal: 16,
                   vertical: 5,
                 ),
-                leading: _IconBox(
+                leading: IconBox(
                   icon: Icons.restore_outlined,
                   color: colorScheme.primary,
                 ),
@@ -1112,16 +1118,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // ----------------------------------------------------------
           // STORAGE
           // ----------------------------------------------------------
-          const _SectionTitle('STORAGE'),
+          const SectionTitle('STORAGE'),
 
-          _SettingsCard(
+          SettingsCard(
             children: [
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 5,
                 ),
-                leading: _IconBox(
+                leading: IconBox(
                   icon: Icons.storage_outlined,
                   color: colorScheme.primary,
                 ),
@@ -1153,16 +1159,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // ----------------------------------------------------------
           // HELP & INFORMATION
           // ----------------------------------------------------------
-          const _SectionTitle('HELP & INFORMATION'),
+          const SectionTitle('HELP & INFORMATION'),
 
-          _SettingsCard(
+          SettingsCard(
             children: [
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 5,
                 ),
-                leading: _IconBox(
+                leading: IconBox(
                   icon: Icons.help_outline_rounded,
                   color: colorScheme.primary,
                 ),
@@ -1192,7 +1198,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   horizontal: 16,
                   vertical: 5,
                 ),
-                leading: _IconBox(
+                leading: IconBox(
                   icon: Icons.wifi_off_rounded,
                   color: colorScheme.primary,
                 ),
@@ -1216,16 +1222,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // ----------------------------------------------------------
           // DANGER ZONE
           // ----------------------------------------------------------
-          const _SectionTitle('DANGER ZONE'),
+          const SectionTitle('DANGER ZONE'),
 
-          _SettingsCard(
+          SettingsCard(
             children: [
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 5,
                 ),
-                leading: _IconBox(
+                leading: IconBox(
                   icon: Icons.delete_forever_outlined,
                   color: colorScheme.error,
                   backgroundColor: colorScheme.errorContainer.withOpacity(.65),
@@ -1260,314 +1266,3 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-// ============================================================================
-// SETTINGS CARD
-// ============================================================================
-
-class _SettingsCard extends StatelessWidget {
-  final List<Widget> children;
-
-  const _SettingsCard({required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colorScheme.outlineVariant.withOpacity(.45)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(children: children),
-    );
-  }
-}
-
-// ============================================================================
-// ICON BOX
-// ============================================================================
-
-class _IconBox extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final Color? backgroundColor;
-
-  const _IconBox({
-    required this.icon,
-    required this.color,
-    this.backgroundColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      width: 42,
-      height: 42,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: backgroundColor ?? colorScheme.primaryContainer.withOpacity(.65),
-        borderRadius: BorderRadius.circular(13),
-      ),
-      child: Icon(icon, size: 21, color: color),
-    );
-  }
-}
-
-// ============================================================================
-// SECURITY OPTION
-// ============================================================================
-
-class _SecurityOptionTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  final Widget? trailing;
-
-  const _SecurityOptionTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    this.trailing,
-
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Material(
-      color: colorScheme.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(13),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Icon(icon, color: colorScheme.primary, size: 21),
-              ),
-
-              const SizedBox(width: 12),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: colorScheme.onSurfaceVariant,
-                        fontSize: 11.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 8),
-              trailing ??
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    color: colorScheme.onSurfaceVariant,
-                    size: 20,
-                  ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// SECTION TITLE
-// ============================================================================
-
-class _SectionTitle extends StatelessWidget {
-  final String text;
-
-  const _SectionTitle(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 10.5,
-          fontWeight: FontWeight.w800,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          letterSpacing: .8,
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// HELP ROW
-// ============================================================================
-
-class _HelpRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String text;
-
-  const _HelpRow({required this.icon, required this.title, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Icon(icon, size: 19, color: colorScheme.primary),
-          ),
-
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  text,
-                  style: TextStyle(
-                    color: colorScheme.onSurfaceVariant,
-                    fontSize: 12,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RestorePasswordDialog extends StatefulWidget {
-  const _RestorePasswordDialog();
-
-  @override
-  State<_RestorePasswordDialog> createState() =>
-      _RestorePasswordDialogState();
-}
-
-class _RestorePasswordDialogState
-    extends State<_RestorePasswordDialog> {
-  final TextEditingController _passwordController =
-  TextEditingController();
-
-  bool _obscurePassword = true;
-
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  void _restore() {
-    final password = _passwordController.text;
-
-    if (password.length < 8) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter the backup password.'),
-        ),
-      );
-      return;
-    }
-
-    Navigator.of(context).pop(password);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      scrollable: true,
-      title: const Text('Enter backup password'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'Enter the password used when this backup was created.',
-          ),
-          const SizedBox(height: 18),
-          TextField(
-            controller: _passwordController,
-            obscureText: _obscurePassword,
-            autofocus: true,
-            onSubmitted: (_) => _restore(),
-            decoration: InputDecoration(
-              labelText: 'Backup password',
-              suffixIcon: IconButton(
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-                icon: Icon(
-                  _obscurePassword
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _restore,
-          child: const Text('Restore'),
-        ),
-      ],
-    );
-  }
-}
