@@ -26,11 +26,7 @@ class _HomeScreenState extends State<HomeScreen>  with WidgetsBindingObserver {
   bool _shouldLockOnResume = false;
   bool _isShowingLock = false;
 
-  final _pages = const [
-    _HomeContent(),
-    DocumentsScreen(),
-    SettingsScreen(),
-  ];
+
   @override
   void initState() {
     super.initState();
@@ -81,8 +77,15 @@ class _HomeScreenState extends State<HomeScreen>  with WidgetsBindingObserver {
   }
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      const _HomeContent(),
+      const DocumentsScreen(),
+      SettingsScreen(
+        isActive: _index == 2,
+      ),
+    ];
     return Scaffold(
-      body: IndexedStack(index: _index, children: _pages),
+      body: IndexedStack(index: _index, children: pages),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.of(context).push(

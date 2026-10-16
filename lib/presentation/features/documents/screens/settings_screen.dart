@@ -11,9 +11,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import '../../../../data/services/app_lock_service.dart';
 import '../providers/document_provider.dart';
-
+import 'package:sqflite_sqlcipher/sqflite.dart';
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final bool isActive;
+  const SettingsScreen({super.key, this.isActive = false,});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -26,6 +27,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   AppLockType? _appLockType;
   bool _hasPocketDocsPin = false;
   final AppLockService _appLockService = AppLockService();
+
+
+  @override
+  void didUpdateWidget(covariant SettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.isActive && !oldWidget.isActive) {
+      _loadStorage();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadStorage();
+  }
   @override
   void initState() {
     super.initState();
@@ -35,16 +52,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadStorage() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final bytes = await _directorySize(directory);
+    try {
+      final documentsDirectory =
+      await getApplicationDocumentsDirectory();
 
-    if (!mounted) return;
+      final databaseDirectory =
+      Directory(await getDatabasesPath());
 
-    setState(() {
-      _storageText = _formatBytes(bytes);
-    });
+      final documentsBytes =
+      await _directorySize(documentsDirectory);
+
+      final databaseBytes =
+      await _directorySize(databaseDirectory);
+
+      final totalBytes = documentsBytes + databaseBytes;
+
+      if (!mounted) return;
+
+      setState(() {
+        _storageText = _formatBytes(totalBytes);
+      });
+    } catch (e) {
+      debugPrint('[STORAGE] Failed to calculate storage: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        _storageText = 'Unavailable';
+      });
+    }
   }
-
   Future<void> _loadAppLockState() async {
     final enabled = await _appLockService.isEnabled();
     final type = await _appLockService.getLockType();
