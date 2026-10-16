@@ -12,6 +12,8 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 import '../../../../domain/entities/document.dart';
 import '../providers/document_provider.dart';
+import '../widgets/action_button.dart';
+import '../widgets/fullscreen_imageviewer.dart';
 import 'add_document_screen.dart';
 
 class DocumentDetailsScreen extends StatelessWidget {
@@ -372,7 +374,7 @@ class DocumentDetailsScreen extends StatelessWidget {
               child: Row(
                 children: [
                   Expanded(
-                    child: _ActionButton(
+                    child: ActionButton(
                       icon: Icons.edit_outlined,
                       label: 'Edit',
                       onTap: () => _edit(context),
@@ -382,7 +384,7 @@ class DocumentDetailsScreen extends StatelessWidget {
                   const SizedBox(width: 8),
 
                   Expanded(
-                    child: _ActionButton(
+                    child: ActionButton(
                       icon: Icons.share_outlined,
                       label: 'Share',
                       onTap: () => _share(context),
@@ -392,7 +394,7 @@ class DocumentDetailsScreen extends StatelessWidget {
                   const SizedBox(width: 8),
 
                   Expanded(
-                    child: _ActionButton(
+                    child: ActionButton(
                       icon: Icons.download_outlined,
                       label: 'Download',
                       onTap: () => _download(context),
@@ -402,7 +404,7 @@ class DocumentDetailsScreen extends StatelessWidget {
                   const SizedBox(width: 8),
 
                   Expanded(
-                    child: _ActionButton(
+                    child: ActionButton(
                       icon: Icons.delete_outline_rounded,
                       label: 'Delete',
                       isDestructive: true,
@@ -517,109 +519,6 @@ class DocumentDetailsScreen extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-// ============================================================
-// ACTION BUTTON
-// ============================================================
-
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool isDestructive;
-
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.isDestructive = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isDestructive
-        ? Theme.of(context).colorScheme.error
-        : Theme.of(context).colorScheme.primary;
-
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        foregroundColor: color,
-        padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        side: BorderSide(
-          color: isDestructive
-              ? color.withOpacity(.45)
-              : Theme.of(context).dividerColor,
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ============================================================
-// FULL SCREEN IMAGE VIEWER
-// ============================================================
-
-
-class FullScreenImageViewer extends StatelessWidget {
-  final Uint8List imageBytes;
-  final String title;
-
-  const FullScreenImageViewer({
-    super.key,
-    required this.imageBytes,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-      body: Center(
-        child: InteractiveViewer(
-          minScale: 0.5,
-          maxScale: 5,
-          child: Image.memory(
-            imageBytes,
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) {
-              return const Center(
-                child: Icon(
-                  Icons.broken_image_outlined,
-                  color: Colors.white,
-                  size: 60,
-                ),
-              );
-            },
-          ),
-        ),
       ),
     );
   }

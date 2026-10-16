@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../domain/entities/folder.dart';
 import '../providers/document_provider.dart';
+import '../widgets/empty_folder.dart';
 import 'folder_documents_screen.dart';
 
 class FolderManagementScreen extends StatefulWidget {
@@ -269,7 +270,7 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
         child: const Icon(Icons.create_new_folder_rounded),
       ),
       body: provider.folders.isEmpty
-          ? _EmptyFolders(onCreateFolder: _createFolder)
+          ? EmptyFolders(onCreateFolder: _createFolder)
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               itemCount: provider.folders.length,
@@ -362,46 +363,3 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
   }
 }
 
-class _EmptyFolders extends StatelessWidget {
-  final VoidCallback onCreateFolder;
-
-  const _EmptyFolders({required this.onCreateFolder});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.folder_open_rounded,
-              size: 64,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'No folders yet',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Create a folder to organize your documents.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: onCreateFolder,
-              icon: const Icon(Icons.create_new_folder_rounded),
-              label: const Text('Create Folder'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

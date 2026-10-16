@@ -552,41 +552,6 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
   }
 }
 
-// ------------------------------------------------------------
-// DATE FIELD
-// ------------------------------------------------------------
-
-class _DateField extends StatelessWidget {
-  final String label;
-  final DateTime? date;
-  final VoidCallback onTap;
-
-  const _DateField({
-    required this.label,
-    required this.date,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: InputDecorator(
-        decoration: const InputDecoration(
-          suffixIcon: Icon(Icons.calendar_today_outlined),
-        ).copyWith(labelText: label),
-        child: Text(
-          date == null
-              ? 'Select date'
-              : '${date!.day.toString().padLeft(2, '0')}/'
-                    '${date!.month.toString().padLeft(2, '0')}/'
-                    '${date!.year}',
-        ),
-      ),
-    );
-  }
-}
 
 // ------------------------------------------------------------
 // SELECTED FILE PREVIEW
