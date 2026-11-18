@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../../domain/entities/document.dart';
 import '../providers/document_provider.dart';
+import 'document_image_preview.dart';
+import 'document_preview.dart';
 
 class DocumentListTile extends StatelessWidget {
   final Document document;
@@ -21,9 +23,9 @@ class DocumentListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<DocumentProvider>();
 
-    final categoryName =
-        provider.categoryNameForId(document.categoryId) ?? 'Uncategorized';
-
+    final category = provider.categoryForId(document.categoryId);
+    final categoryName = category?.name ?? 'Uncategorized';
+    final categoryEmoji = category?.emoji ?? '📄';
     return Card(
       child: InkWell(
         onTap: onTap,
@@ -32,7 +34,7 @@ class DocumentListTile extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              _Preview(document: document),
+              DocumentPreview (document: document),
 
               const SizedBox(width: 13),
 
@@ -52,13 +54,23 @@ class DocumentListTile extends StatelessWidget {
 
                     const SizedBox(height: 5),
 
-                    Text(
-                      categoryName,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          categoryEmoji,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          categoryName,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -73,43 +85,3 @@ class DocumentListTile extends StatelessWidget {
   }
 }
 
-class _Preview extends StatelessWidget {
-  final Document document;
-
-  const _Preview({required this.document});
-
-  @override
-  Widget build(BuildContext context) {
-    if (document.fileType == DocumentType.pdf) {
-      return Container(
-        width: 62,
-        height: 62,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primaryContainer,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Icon(
-          Icons.picture_as_pdf_rounded,
-          color: Theme.of(context).colorScheme.primary,
-          size: 30,
-        ),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(15),
-      child: Image.file(
-        File(document.filePath),
-        width: 62,
-        height: 62,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(
-          width: 62,
-          height: 62,
-          color: Theme.of(context).colorScheme.primaryContainer,
-          child: const Icon(Icons.image_not_supported_outlined),
-        ),
-      ),
-    );
-  }
-}

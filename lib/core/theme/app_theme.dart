@@ -26,8 +26,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
-      scaffoldBackgroundColor:
-          isDark ? const Color(0xFF11131A) : background,
+      scaffoldBackgroundColor: isDark ? const Color(0xFF11131A) : background,
       colorScheme: scheme.copyWith(
         primary: brand,
         secondary: brand2,
@@ -36,8 +35,7 @@ class AppTheme {
       ),
       fontFamily: 'Inter',
       appBarTheme: AppBarTheme(
-        backgroundColor:
-            isDark ? const Color(0xFF11131A) : background,
+        backgroundColor: isDark ? const Color(0xFF11131A) : background,
         foregroundColor: isDark ? Colors.white : ink,
         elevation: 0,
         centerTitle: false,
@@ -48,9 +46,7 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: isDark ? const Color(0xFF2A2E39) : line,
-          ),
+          side: BorderSide(color: isDark ? const Color(0xFF2A2E39) : line),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(

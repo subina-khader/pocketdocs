@@ -1,5 +1,4 @@
-import 'package:sqflite/sqflite.dart';
-
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import '../database/database_helper.dart';
 import '../models/category_model.dart';
 import '../../core/constants/database_constants.dart';
@@ -8,9 +7,7 @@ import 'category_local_data_source.dart';
 class CategoryLocalDataSourceImpl implements CategoryLocalDataSource {
   final DatabaseHelper databaseHelper;
 
-  CategoryLocalDataSourceImpl({
-    required this.databaseHelper,
-  });
+  CategoryLocalDataSourceImpl({required this.databaseHelper});
 
   @override
   Future<List<CategoryModel>> getCategories() async {
@@ -21,9 +18,7 @@ class CategoryLocalDataSourceImpl implements CategoryLocalDataSource {
       orderBy: '${DatabaseConstants.categoryName} ASC',
     );
 
-    return maps
-        .map((map) => CategoryModel.fromMap(map))
-        .toList();
+    return maps.map((map) => CategoryModel.fromMap(map)).toList();
   }
 
   @override
@@ -45,9 +40,7 @@ class CategoryLocalDataSourceImpl implements CategoryLocalDataSource {
   }
 
   @override
-  Future<CategoryModel> insertCategory(
-      CategoryModel category,
-      ) async {
+  Future<CategoryModel> insertCategory(CategoryModel category) async {
     final db = await databaseHelper.database;
 
     final id = await db.insert(
@@ -60,13 +53,9 @@ class CategoryLocalDataSourceImpl implements CategoryLocalDataSource {
   }
 
   @override
-  Future<void> updateCategory(
-      CategoryModel category,
-      ) async {
+  Future<void> updateCategory(CategoryModel category) async {
     if (category.id == null) {
-      throw ArgumentError(
-        'Category ID is required to update a category.',
-      );
+      throw ArgumentError('Category ID is required to update a category.');
     }
 
     final db = await databaseHelper.database;

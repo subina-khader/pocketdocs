@@ -1,11 +1,11 @@
-
 import 'package:provider/provider.dart';
 
 import '../data/database/database_helper.dart';
 
 import '../data/datasources/category_local_data_source.dart';
 import '../data/datasources/category_local_data_source_impl.dart';
-
+import '../data/services/backup_encryption_service.dart';
+import '../data/services/encryption_service.dart';
 import '../data/datasources/document_local_data_source.dart';
 import '../data/datasources/document_local_data_source_impl.dart';
 
@@ -23,177 +23,174 @@ import '../data/services/image_compression_service.dart';
 import '../domain/repositories/category_repository.dart';
 import '../domain/repositories/document_repository.dart';
 import '../domain/repositories/folder_repository.dart';
-
+import '../data/services/database_key_service.dart';
 import '../presentation/features/documents/providers/document_provider.dart';
+import '../data/services/backup_restore_service.dart';
 
 final ServiceLocator sl = ServiceLocator();
 
 Future<void> initializeDependencies() async {
-// -------------------------
-// Database
-// -------------------------
+  // -------------------------
+  // Database
+  // -------------------------
 
-final databaseHelper = DatabaseHelper();
+  final databaseKeyService = DatabaseKeyService();
 
-// -------------------------
-// Services
-// -------------------------
+  final databaseHelper = DatabaseHelper(databaseKeyService: databaseKeyService);
+  // -------------------------
+  // Services
+  // -------------------------
 
-final fileStorageService = FileStorageService();
+  final fileStorageService = FileStorageService();
 
-final imageCompressionService =
-ImageCompressionService();
+  final imageCompressionService = ImageCompressionService();
 
-final documentFileService = DocumentFileService(
-fileStorageService: fileStorageService,
-imageCompressionService: imageCompressionService,
-);
+  final encryptionService = EncryptionService();
 
-// -------------------------
-// Document Data Source
-// -------------------------
+  final documentFileService = DocumentFileService(
+    fileStorageService: fileStorageService,
+    imageCompressionService: imageCompressionService,
+    encryptionService: encryptionService,
+  );
 
-final localDataSource = DocumentLocalDataSourceImpl(
-databaseHelper: databaseHelper,
-);
+  // -------------------------
+  // Document Data Source
+  // -------------------------
 
-// -------------------------
-// Document Repository
-// -------------------------
+  final localDataSource = DocumentLocalDataSourceImpl(
+    databaseHelper: databaseHelper,
+  );
 
-final documentRepository = DocumentRepositoryImpl(
-localDataSource: localDataSource,
-documentFileService: documentFileService,
-);
+  // -------------------------
+  // Document Repository
+  // -------------------------
 
-// -------------------------
-// Folder Data Source
-// -------------------------
+  final documentRepository = DocumentRepositoryImpl(
+    localDataSource: localDataSource,
+    documentFileService: documentFileService,
+  );
 
-final folderLocalDataSource = FolderLocalDataSourceImpl(
-databaseHelper: databaseHelper,
-);
+  // -------------------------
+  // Folder Data Source
+  // -------------------------
 
-// -------------------------
-// Folder Repository
-// -------------------------
+  final folderLocalDataSource = FolderLocalDataSourceImpl(
+    databaseHelper: databaseHelper,
+  );
 
-final folderRepository = FolderRepositoryImpl(
-localDataSource: folderLocalDataSource,
-);
+  // -------------------------
+  // Folder Repository
+  // -------------------------
 
-// -------------------------
-// Category Data Source
-// -------------------------
+  final folderRepository = FolderRepositoryImpl(
+    localDataSource: folderLocalDataSource,
+  );
 
-final categoryLocalDataSource =
-CategoryLocalDataSourceImpl(
-databaseHelper: databaseHelper,
-);
+  // -------------------------
+  // Category Data Source
+  // -------------------------
 
-// -------------------------
-// Category Repository
-// -------------------------
+  final categoryLocalDataSource = CategoryLocalDataSourceImpl(
+    databaseHelper: databaseHelper,
+  );
 
-final categoryRepository = CategoryRepositoryImpl(
-localDataSource: categoryLocalDataSource,
-);
+  // -------------------------
+  // Category Repository
+  // -------------------------
 
-// -------------------------
-// Register Singletons
-// -------------------------
+  final categoryRepository = CategoryRepositoryImpl(
+    localDataSource: categoryLocalDataSource,
+  );
 
-sl.registerSingleton<DatabaseHelper>(
-databaseHelper,
-);
+  // -------------------------
+  // Backup & Restore
+  // -------------------------
 
-sl.registerSingleton<FileStorageService>(
-fileStorageService,
-);
+  final backupEncryptionService = BackupEncryptionService();
 
-sl.registerSingleton<ImageCompressionService>(
-imageCompressionService,
-);
+  final backupRestoreService = BackupRestoreService(
+    databaseHelper: databaseHelper,
+    documentRepository: documentRepository,
+    folderRepository: folderRepository,
+    categoryRepository: categoryRepository,
+    fileStorageService: fileStorageService,
+    documentFileService: documentFileService,
+    backupEncryptionService: backupEncryptionService,
+  );
+  // -------------------------
+  // Register Singletons
+  // -------------------------
 
-sl.registerSingleton<DocumentFileService>(
-documentFileService,
-);
+  sl.registerSingleton<DatabaseKeyService>(databaseKeyService);
 
-// -------------------------
-// Document Dependencies
-// -------------------------
+  sl.registerSingleton<DatabaseHelper>(databaseHelper);
+  sl.registerSingleton<FileStorageService>(fileStorageService);
 
-sl.registerSingleton<DocumentLocalDataSource>(
-localDataSource,
-);
+  sl.registerSingleton<ImageCompressionService>(imageCompressionService);
 
-sl.registerSingleton<DocumentRepository>(
-documentRepository,
-);
+  sl.registerSingleton<DocumentFileService>(documentFileService);
+  sl.registerSingleton<BackupRestoreService>(backupRestoreService);
+  // -------------------------
+  // Document Dependencies
+  // -------------------------
 
-// -------------------------
-// Folder Dependencies
-// -------------------------
+  sl.registerSingleton<DocumentLocalDataSource>(localDataSource);
 
-sl.registerSingleton<FolderLocalDataSource>(
-folderLocalDataSource,
-);
+  sl.registerSingleton<DocumentRepository>(documentRepository);
 
-sl.registerSingleton<FolderRepository>(
-folderRepository,
-);
+  // -------------------------
+  // Folder Dependencies
+  // -------------------------
 
-// -------------------------
-// Category Dependencies
-// -------------------------
+  sl.registerSingleton<FolderLocalDataSource>(folderLocalDataSource);
 
-sl.registerSingleton<CategoryLocalDataSource>(
-categoryLocalDataSource,
-);
+  sl.registerSingleton<FolderRepository>(folderRepository);
 
-sl.registerSingleton<CategoryRepository>(
-categoryRepository,
-);
+  // -------------------------
+  // Category Dependencies
+  // -------------------------
 
-// -------------------------
-// Document Provider
-// -------------------------
+  sl.registerSingleton<CategoryLocalDataSource>(categoryLocalDataSource);
 
-sl.registerFactory<DocumentProvider>(
-() => DocumentProvider(
-repository: sl<DocumentRepository>(),
-folderRepository: sl<FolderRepository>(),
-categoryRepository: sl<CategoryRepository>(),
-),
-);
+  sl.registerSingleton<CategoryRepository>(categoryRepository);
+
+  // -------------------------
+  // Document Provider
+  // -------------------------
+
+  sl.registerFactory<DocumentProvider>(
+    () => DocumentProvider(
+      repository: sl<DocumentRepository>(),
+      folderRepository: sl<FolderRepository>(),
+      categoryRepository: sl<CategoryRepository>(),
+    ),
+  );
+  sl.registerSingleton<EncryptionService>(encryptionService);
 }
 
 class ServiceLocator {
-final Map<Type, dynamic> _singletons = {};
-final Map<Type, dynamic Function()> _factories = {};
+  final Map<Type, dynamic> _singletons = {};
+  final Map<Type, dynamic Function()> _factories = {};
 
-void registerSingleton<T>(T instance) {
-_singletons[T] = instance;
+  void registerSingleton<T>(T instance) {
+    _singletons[T] = instance;
+  }
+
+  void registerFactory<T>(T Function() factory) {
+    _factories[T] = factory;
+  }
+
+  T call<T>() {
+    if (_singletons.containsKey(T)) {
+      return _singletons[T] as T;
+    }
+
+    if (_factories.containsKey(T)) {
+      return _factories[T]!() as T;
+    }
+
+    throw StateError('Dependency of type $T has not been registered.');
+  }
+
+  T get<T>() => call<T>();
 }
-
-void registerFactory<T>(T Function() factory) {
-_factories[T] = factory;
-}
-
-T call<T>() {
-if (_singletons.containsKey(T)) {
-return _singletons[T] as T;
-}
-
-if (_factories.containsKey(T)) {
-return _factories[T]!() as T;
-}
-
-throw StateError(
-'Dependency of type $T has not been registered.',
-);
-}
-
-T get<T>() => call<T>();
-}
-

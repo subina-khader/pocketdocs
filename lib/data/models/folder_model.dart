@@ -2,11 +2,7 @@ import '../../core/constants/database_constants.dart';
 import '../../domain/entities/folder.dart';
 
 class FolderModel extends Folder {
-  const FolderModel({
-    super.id,
-    required super.name,
-    required super.createdAt,
-  });
+  const FolderModel({super.id, required super.name, required super.createdAt});
 
   factory FolderModel.fromEntity(Folder folder) {
     return FolderModel(
@@ -30,16 +26,11 @@ class FolderModel extends Folder {
     return {
       if (id != null) DatabaseConstants.folderTableId: id,
       DatabaseConstants.folderName: name,
-      DatabaseConstants.folderCreatedAt:
-      createdAt.toIso8601String(),
+      DatabaseConstants.folderCreatedAt: createdAt.toIso8601String(),
     };
   }
 
-  FolderModel copyWith({
-    int? id,
-    String? name,
-    DateTime? createdAt,
-  }) {
+  FolderModel copyWith({int? id, String? name, DateTime? createdAt}) {
     return FolderModel(
       id: id ?? this.id,
       name: name ?? this.name,

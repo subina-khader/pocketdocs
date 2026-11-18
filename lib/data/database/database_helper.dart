@@ -1,10 +1,16 @@
 import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 import '../../core/constants/database_constants.dart';
+import '../../core/errors/app_exceptions.dart' as app_exceptions;
+import '../services/database_key_service.dart';
 
 class DatabaseHelper {
   static Database? _database;
+
+  final DatabaseKeyService databaseKeyService;
+
+  DatabaseHelper({required this.databaseKeyService});
 
   Future<Database> get database async {
     if (_database != null) {
@@ -17,18 +23,30 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-    final databasePath = await getDatabasesPath();
+    try {
+      final databasePath = await getDatabasesPath();
 
-    final path = join(databasePath, DatabaseConstants.databaseName);
+      final databaseFilePath = join(
+        databasePath,
+        DatabaseConstants.databaseName,
+      );
 
-    return openDatabase(
-      path,
-      version: DatabaseConstants.databaseVersion,
-      onConfigure: (db) async {
-        await db.execute('PRAGMA foreign_keys = ON');
-      },
-      onCreate: _onCreate,
-    );
+      final databaseKey = await databaseKeyService.getOrCreateKey();
+
+      return await openDatabase(
+        databaseFilePath,
+        version: DatabaseConstants.databaseVersion,
+        password: databaseKey,
+        onConfigure: (db) async {
+          await db.execute('PRAGMA foreign_keys = ON');
+        },
+        onCreate: _onCreate,
+      );
+    } catch (e) {
+      throw app_exceptions.DatabaseException(
+        'Failed to initialize database: $e',
+      );
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -60,7 +78,10 @@ class DatabaseHelper {
 
         ${DatabaseConstants.categoryName}
             TEXT NOT NULL UNIQUE,
-        ${DatabaseConstants.categoryEmoji} TEXT NOT NULL,
+
+        ${DatabaseConstants.categoryEmoji}
+            TEXT NOT NULL,
+
         ${DatabaseConstants.categoryCreatedAt}
             TEXT NOT NULL
       )
@@ -90,8 +111,6 @@ class DatabaseHelper {
         ${DatabaseConstants.createdAt}
             TEXT NOT NULL,
 
-        
-
         ${DatabaseConstants.notes}
             TEXT,
 
@@ -117,21 +136,24 @@ class DatabaseHelper {
     final now = DateTime.now().toIso8601String();
 
     final defaultCategories = [
-      'Receipt',
-      'ID Card',
-      'Vehicle',
-      'Certificate',
-      'Warranty',
-      'Bill',
-      'Travel',
-      'Other',
+      {'name': 'Receipt', 'emoji': '🧾'},
+      {'name': 'ID Card', 'emoji': '🪪'},
+      {'name': 'Vehicle', 'emoji': '🚗'},
+      {'name': 'Certificate', 'emoji': '🎓'},
+      {'name': 'Bill', 'emoji': '💰'},
     ];
 
     for (final category in defaultCategories) {
       await db.insert(DatabaseConstants.categoriesTable, {
-        DatabaseConstants.categoryName: category,
+        DatabaseConstants.categoryName: category['name'],
+        DatabaseConstants.categoryEmoji: category['emoji'],
         DatabaseConstants.categoryCreatedAt: now,
       });
     }
+  }
+
+  Future<void> close() async {
+    await _database?.close();
+    _database = null;
   }
 }

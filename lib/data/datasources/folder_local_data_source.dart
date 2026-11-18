@@ -5,13 +5,9 @@ abstract class FolderLocalDataSource {
 
   Future<FolderModel?> getFolderById(int id);
 
-  Future<FolderModel> insertFolder(
-      FolderModel folder,
-      );
+  Future<FolderModel> insertFolder(FolderModel folder);
 
-  Future<void> updateFolder(
-      FolderModel folder,
-      );
+  Future<void> updateFolder(FolderModel folder);
 
   Future<void> deleteFolder(int id);
 }

@@ -32,8 +32,7 @@ class DocumentProvider extends ChangeNotifier {
   List<Folder> _folders = [];
   List<category_entity.Category> _categories = [];
   int? _selectedFolderId;
-  int? _selectedCategoryId;
-
+  final Set<int> _selectedCategoryIds = {};
   String _searchQuery = '';
 
   DocumentSortOption _sortOption = DocumentSortOption.newest;
@@ -58,8 +57,7 @@ class DocumentProvider extends ChangeNotifier {
       List.unmodifiable(_categories);
   int? get selectedFolderId => _selectedFolderId;
 
-  int? get selectedCategoryId => _selectedCategoryId;
-
+  Set<int> get selectedCategoryIds => Set.unmodifiable(_selectedCategoryIds);
   String? get errorMessage => _errorMessage;
 
   String get searchQuery => _searchQuery;
@@ -88,7 +86,7 @@ class DocumentProvider extends ChangeNotifier {
     }
   }
 
-  category_entity.Category? categoryForId(int? categoryId)  {
+  category_entity.Category? categoryForId(int? categoryId) {
     if (categoryId == null) {
       return null;
     }
@@ -109,9 +107,9 @@ class DocumentProvider extends ChangeNotifier {
   // ------------------------------------------------------------
 
   Future<bool> updateFolderDocuments(
-      int folderId,
-      Set<int> selectedDocumentIds,
-      ) async {
+    int folderId,
+    Set<int> selectedDocumentIds,
+  ) async {
     try {
       final updatedDocuments = <Document>[];
 
@@ -120,8 +118,7 @@ class DocumentProvider extends ChangeNotifier {
           continue;
         }
 
-        final shouldBeInFolder =
-        selectedDocumentIds.contains(document.id);
+        final shouldBeInFolder = selectedDocumentIds.contains(document.id);
 
         // Only update documents whose folder membership changed.
         if (document.folderId == folderId && shouldBeInFolder) {
@@ -150,12 +147,10 @@ class DocumentProvider extends ChangeNotifier {
       if (updatedDocuments.isNotEmpty) {
         _allDocuments = _allDocuments.map((document) {
           final updated = updatedDocuments.where(
-                (item) => item.id == document.id,
+            (item) => item.id == document.id,
           );
 
-          return updated.isNotEmpty
-              ? updated.first
-              : document;
+          return updated.isNotEmpty ? updated.first : document;
         }).toList();
 
         _applyFiltersAndSorting();
@@ -321,8 +316,7 @@ class DocumentProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> addCategory(String name,
-      String emoji,) async {
+  Future<bool> addCategory(String name, String emoji) async {
     final trimmedName = name.trim();
 
     if (trimmedName.isEmpty) {
@@ -348,7 +342,7 @@ class DocumentProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> renameCategory(int id, String name, String emoji,) async {
+  Future<bool> renameCategory(int id, String name, String emoji) async {
     final trimmedName = name.trim();
 
     if (trimmedName.isEmpty) {
@@ -360,7 +354,10 @@ class DocumentProvider extends ChangeNotifier {
         (category) => category.id == id,
       );
 
-      final updatedCategory = oldCategory.copyWith(name: trimmedName, emoji: emoji,);
+      final updatedCategory = oldCategory.copyWith(
+        name: trimmedName,
+        emoji: emoji,
+      );
 
       await categoryRepository.updateCategory(updatedCategory);
 
@@ -397,9 +394,7 @@ class DocumentProvider extends ChangeNotifier {
         return document;
       }).toList();
 
-      if (_selectedCategoryId == id) {
-        _selectedCategoryId = null;
-      }
+      _selectedCategoryIds.remove(id);
 
       _applyFiltersAndSorting();
       _updateStatus();
@@ -411,8 +406,10 @@ class DocumentProvider extends ChangeNotifier {
     }
   }
 
-  void filterByCategory(int? categoryId) {
-    _selectedCategoryId = categoryId;
+  void filterByCategories(Set<int> categoryIds) {
+    _selectedCategoryIds
+      ..clear()
+      ..addAll(categoryIds);
 
     _applyFiltersAndSorting();
     _updateStatus();
@@ -512,7 +509,7 @@ class DocumentProvider extends ChangeNotifier {
 
   void clearFilters() {
     _searchQuery = '';
-    _selectedCategoryId = null;
+    _selectedCategoryIds.clear();
     _selectedFolderId = null;
     _sortOption = DocumentSortOption.newest;
 
@@ -526,7 +523,7 @@ class DocumentProvider extends ChangeNotifier {
 
   Future<void> refresh() async {
     _searchQuery = '';
-    _selectedCategoryId = null;
+    _selectedCategoryIds.clear();
     _selectedFolderId = null;
     _sortOption = DocumentSortOption.newest;
 
@@ -661,12 +658,12 @@ class DocumentProvider extends ChangeNotifier {
     }
 
     // Category filter
-    if (_selectedCategoryId != null) {
+    if (_selectedCategoryIds.isNotEmpty) {
       result = result.where((document) {
-        return document.categoryId == _selectedCategoryId;
+        return document.categoryId != null &&
+            _selectedCategoryIds.contains(document.categoryId);
       }).toList();
     }
-
     result.sort(_compareDocuments);
 
     _documents = result;

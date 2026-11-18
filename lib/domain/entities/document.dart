@@ -1,9 +1,4 @@
-enum DocumentType {
-  image,
-  pdf,
-}
-
-
+enum DocumentType { image, pdf }
 
 class Document {
   final int? id;
