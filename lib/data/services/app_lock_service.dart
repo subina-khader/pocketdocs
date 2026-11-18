@@ -5,10 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum AppLockType {
-  device,
-  pin,
-}
+enum AppLockType { device, pin }
 
 class AppLockService {
   static const String _enabledKey = 'app_lock_enabled';
@@ -17,8 +14,7 @@ class AppLockService {
 
   final LocalAuthentication _localAuth = LocalAuthentication();
 
-  static const FlutterSecureStorage _secureStorage =
-  FlutterSecureStorage();
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   Future<bool> isEnabled() async {
     final prefs = await SharedPreferences.getInstance();
@@ -49,60 +45,38 @@ class AppLockService {
 
     // Only one App Lock method can be active.
     // Switching to device authentication removes the PocketDocs PIN.
-    await _secureStorage.delete(
-      key: _pinHashKey,
-    );
+    await _secureStorage.delete(key: _pinHashKey);
   }
 
   Future<void> enablePinLock(String pin) async {
     if (!_isValidPin(pin)) {
-      throw ArgumentError(
-        'PIN must contain exactly 5 digits.',
-      );
+      throw ArgumentError('PIN must contain exactly 5 digits.');
     }
 
     final prefs = await SharedPreferences.getInstance();
 
     final pinHash = _hashPin(pin);
 
-    await _secureStorage.write(
-      key: _pinHashKey,
-      value: pinHash,
-    );
+    await _secureStorage.write(key: _pinHashKey, value: pinHash);
 
     // PIN becomes the only active App Lock method.
-    await prefs.setBool(
-      _enabledKey,
-      true,
-    );
+    await prefs.setBool(_enabledKey, true);
 
-    await prefs.setString(
-      _typeKey,
-      'pin',
-    );
+    await prefs.setString(_typeKey, 'pin');
   }
 
   Future<void> disableLock() async {
     final prefs = await SharedPreferences.getInstance();
 
-    await prefs.setBool(
-      _enabledKey,
-      false,
-    );
+    await prefs.setBool(_enabledKey, false);
 
-    await prefs.remove(
-      _typeKey,
-    );
+    await prefs.remove(_typeKey);
 
-    await _secureStorage.delete(
-      key: _pinHashKey,
-    );
+    await _secureStorage.delete(key: _pinHashKey);
   }
 
   /// Checks whether the device has a supported authentication method.
-  ///
-  /// This can be fingerprint, face authentication, device PIN,
-  /// password, or another authentication method supported by the OS.
+
   Future<bool> canAuthenticateWithDevice() async {
     try {
       return await _localAuth.canCheckBiometrics ||
@@ -113,15 +87,12 @@ class AppLockService {
   }
 
   /// Authenticates the user using the device's authentication.
-  ///
-  /// [localizedReason] can be changed depending on why authentication
-  /// is being requested.
+
   Future<bool> authenticateWithDevice({
     String localizedReason = 'Authenticate to open PocketDocs',
   }) async {
     try {
-      final canAuthenticate =
-      await canAuthenticateWithDevice();
+      final canAuthenticate = await canAuthenticateWithDevice();
 
       if (!canAuthenticate) {
         return false;
@@ -141,9 +112,7 @@ class AppLockService {
   }
 
   Future<bool> hasPin() async {
-    final pinHash = await _secureStorage.read(
-      key: _pinHashKey,
-    );
+    final pinHash = await _secureStorage.read(key: _pinHashKey);
 
     return pinHash != null;
   }
@@ -153,9 +122,7 @@ class AppLockService {
       return false;
     }
 
-    final savedHash = await _secureStorage.read(
-      key: _pinHashKey,
-    );
+    final savedHash = await _secureStorage.read(key: _pinHashKey);
 
     if (savedHash == null) {
       return false;

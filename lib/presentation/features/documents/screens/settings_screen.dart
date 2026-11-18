@@ -18,9 +18,10 @@ import 'package:provider/provider.dart';
 import '../../../../data/services/app_lock_service.dart';
 import '../providers/document_provider.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
+
 class SettingsScreen extends StatefulWidget {
   final bool isActive;
-  const SettingsScreen({super.key, this.isActive = false,});
+  const SettingsScreen({super.key, this.isActive = false});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -33,7 +34,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   AppLockType? _appLockType;
   bool _hasPocketDocsPin = false;
   final AppLockService _appLockService = AppLockService();
-
 
   @override
   void didUpdateWidget(covariant SettingsScreen oldWidget) {
@@ -49,6 +49,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.didChangeDependencies();
     _loadStorage();
   }
+
   @override
   void initState() {
     super.initState();
@@ -59,17 +60,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadStorage() async {
     try {
-      final documentsDirectory =
-      await getApplicationDocumentsDirectory();
+      final documentsDirectory = await getApplicationDocumentsDirectory();
 
-      final databaseDirectory =
-      Directory(await getDatabasesPath());
+      final databaseDirectory = Directory(await getDatabasesPath());
 
-      final documentsBytes =
-      await _directorySize(documentsDirectory);
+      final documentsBytes = await _directorySize(documentsDirectory);
 
-      final databaseBytes =
-      await _directorySize(databaseDirectory);
+      final databaseBytes = await _directorySize(databaseDirectory);
 
       final totalBytes = documentsBytes + databaseBytes;
 
@@ -88,6 +85,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
     }
   }
+
   Future<void> _loadAppLockState() async {
     final enabled = await _appLockService.isEnabled();
     final type = await _appLockService.getLockType();
@@ -145,8 +143,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final colorScheme = Theme.of(sheetContext).colorScheme;
         final deviceIsActive =
             _appLockEnabled && _appLockType == AppLockType.device;
-        final pinIsActive =
-            _appLockEnabled && _appLockType == AppLockType.pin;
+        final pinIsActive = _appLockEnabled && _appLockType == AppLockType.pin;
 
         return SafeArea(
           child: Padding(
@@ -201,14 +198,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       : 'Authenticate with your device to enable or switch to this method',
                   trailing: deviceIsActive
                       ? Icon(
-                    Icons.check_circle_rounded,
-                    color: colorScheme.primary,
-                  )
+                          Icons.check_circle_rounded,
+                          color: colorScheme.primary,
+                        )
                       : Icon(
-                    Icons.chevron_right_rounded,
-                    color: colorScheme.onSurfaceVariant,
-                    size: 20,
-                  ),
+                          Icons.chevron_right_rounded,
+                          color: colorScheme.onSurfaceVariant,
+                          size: 20,
+                        ),
                   onTap: () async {
                     Navigator.pop(sheetContext);
                     await _handleDeviceAuthentication();
@@ -225,18 +222,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       : 'Authenticate with your device, then create a 5-digit PIN',
                   trailing: pinIsActive
                       ? Icon(
-                    Icons.check_circle_rounded,
-                    color: colorScheme.primary,
-                  )
+                          Icons.check_circle_rounded,
+                          color: colorScheme.primary,
+                        )
                       : const Icon(Icons.chevron_right_rounded, size: 20),
                   onTap: () async {
                     Navigator.pop(sheetContext);
 
                     final hadPin = _hasPocketDocsPin;
                     final result = await Navigator.of(context).push<bool>(
-                      MaterialPageRoute(
-                        builder: (_) => const PinSetupScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const PinSetupScreen()),
                     );
 
                     if (result == true && mounted) {
@@ -274,8 +269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
 
-    final canAuthenticate =
-    await _appLockService.canAuthenticateWithDevice();
+    final canAuthenticate = await _appLockService.canAuthenticateWithDevice();
 
     if (!mounted) return;
 
@@ -291,9 +285,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
 
     if (!authenticated) {
-      _showComingSoon(
-        'Authentication failed. App Lock was not changed.',
-      );
+      _showComingSoon('Authentication failed. App Lock was not changed.');
       return;
     }
 
@@ -316,8 +308,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _disableDeviceAuthentication() async {
-    final canAuthenticate =
-    await _appLockService.canAuthenticateWithDevice();
+    final canAuthenticate = await _appLockService.canAuthenticateWithDevice();
 
     if (!mounted) return;
 
@@ -333,9 +324,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
 
     if (!authenticated) {
-      _showComingSoon(
-        'Authentication failed. App Lock remains enabled.',
-      );
+      _showComingSoon('Authentication failed. App Lock remains enabled.');
       return;
     }
 
@@ -391,16 +380,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final backupService = sl<BackupRestoreService>();
 
-      final backupFile = await backupService.createBackup(
-        password: password,
-      );
+      final backupFile = await backupService.createBackup(password: password);
 
       if (!mounted) return;
 
       await Share.shareXFiles(
-        [
-          XFile(backupFile.path),
-        ],
+        [XFile(backupFile.path)],
         text: 'PocketDocs encrypted backup',
         subject: 'PocketDocs Backup',
       );
@@ -409,9 +394,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Encrypted backup created successfully.',
-          ),
+          content: Text('Encrypted backup created successfully.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -420,9 +403,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Backup failed: ${_cleanErrorMessage(e)}',
-          ),
+          content: Text('Backup failed: ${_cleanErrorMessage(e)}'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -513,10 +494,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return;
       }
 
-      final header = await file.openRead(0, 5).fold<List<int>>(
-        <int>[],
+      final header = await file
+          .openRead(0, 5)
+          .fold<List<int>>(
+            <int>[],
             (previous, bytes) => previous..addAll(bytes),
-      );
+          );
 
       debugPrint('[RESTORE] Backup header: $header');
 
@@ -525,7 +508,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (header.length != expectedHeader.length ||
           !List.generate(
             expectedHeader.length,
-                (index) => header[index] == expectedHeader[index],
+            (index) => header[index] == expectedHeader[index],
           ).every((matches) => matches)) {
         debugPrint('[RESTORE] Invalid backup file header.');
 
@@ -533,9 +516,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'This file is not a valid PocketDocs backup.',
-            ),
+            content: Text('This file is not a valid PocketDocs backup.'),
           ),
         );
         return;
@@ -575,10 +556,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       debugPrint('[RESTORE] Calling restoreBackup()...');
 
-      await backupService.restoreBackup(
-        backupFile: file,
-        password: password,
-      );
+      await backupService.restoreBackup(backupFile: file, password: password);
 
       debugPrint('[RESTORE] restoreBackup() completed successfully.');
 
@@ -615,9 +593,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Restore failed: ${_cleanErrorMessage(e)}',
-          ),
+          content: Text('Restore failed: ${_cleanErrorMessage(e)}'),
           duration: const Duration(seconds: 8),
           behavior: SnackBarBehavior.floating,
         ),
@@ -654,7 +630,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Text(
                       'Set a password for this backup. '
-                          'You will need this password to restore it.',
+                      'You will need this password to restore it.',
                     ),
 
                     const SizedBox(height: 20),
@@ -691,8 +667,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         suffixIcon: IconButton(
                           onPressed: () {
                             setState(() {
-                              obscureConfirmPassword =
-                              !obscureConfirmPassword;
+                              obscureConfirmPassword = !obscureConfirmPassword;
                             });
                           },
                           icon: Icon(
@@ -716,11 +691,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 FilledButton(
                   onPressed: () {
-                    final password =
-                    passwordController.text.trim();
+                    final password = passwordController.text.trim();
 
-                    final confirmPassword =
-                    confirmPasswordController.text.trim();
+                    final confirmPassword = confirmPasswordController.text
+                        .trim();
 
                     if (password.length < 8) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -736,9 +710,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     if (password != confirmPassword) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text(
-                            'Passwords do not match.',
-                          ),
+                          content: Text('Passwords do not match.'),
                         ),
                       );
                       return;
@@ -755,33 +727,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
+
   Future<String?> _showRestorePasswordDialog() {
     return showDialog<String>(
       context: context,
       barrierDismissible: false,
       builder: (_) => const RestorePasswordDialog(),
     );
-  }  Future<bool?> _showRestoreConfirmation() {
+  }
+
+  Future<bool?> _showRestoreConfirmation() {
     return showDialog<bool>(
       context: context,
       builder: (dialogContext) {
-        final colorScheme =
-            Theme.of(dialogContext).colorScheme;
+        final colorScheme = Theme.of(dialogContext).colorScheme;
 
         return AlertDialog(
-          title: const Text(
-            'Restore backup?',
-          ),
+          title: const Text('Restore backup?'),
           content: const Text(
             'Restoring this backup will replace all current PocketDocs documents, folders, and categories with the data in the backup.\n\nThis action cannot be undone.',
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                  false,
-                );
+                Navigator.pop(dialogContext, false);
               },
               child: const Text('Cancel'),
             ),
@@ -790,10 +759,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 backgroundColor: colorScheme.primary,
               ),
               onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                  true,
-                );
+                Navigator.pop(dialogContext, true);
               },
               child: const Text('Restore'),
             ),
@@ -802,17 +768,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
+
   String _cleanErrorMessage(Object error) {
     final message = error.toString();
 
     if (message.startsWith('Exception: ')) {
-      return message.substring(
-        'Exception: '.length,
-      );
+      return message.substring('Exception: '.length);
     }
 
     return message;
   }
+
   void _showComingSoon(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
@@ -873,7 +839,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
   void _showHowItWorks() {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -891,10 +856,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 const Text(
                   'How PocketDocs works',
-                  style: TextStyle(
-                    fontSize: 21,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -911,35 +873,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: Icons.add_a_photo_outlined,
                   title: 'Add documents',
                   text:
-                  'Capture images or import PDFs and images '
+                      'Capture images or import PDFs and images '
                       'from your device.',
                 ),
                 const HelpRow(
                   icon: Icons.folder_copy_outlined,
                   title: 'Organize your files',
                   text:
-                  'Add titles, assign categories, and arrange '
+                      'Add titles, assign categories, and arrange '
                       'documents into folders.',
                 ),
                 const HelpRow(
                   icon: Icons.search_rounded,
                   title: 'Find and manage',
                   text:
-                  'Search, filter, preview, share, and manage '
+                      'Search, filter, preview, share, and manage '
                       'your saved documents.',
                 ),
                 const HelpRow(
                   icon: Icons.shield_outlined,
                   title: 'Keep documents private',
                   text:
-                  'Your documents stay on your device. Enable '
+                      'Your documents stay on your device. Enable '
                       'App Lock for an additional layer of protection.',
                 ),
                 const HelpRow(
                   icon: Icons.backup_outlined,
                   title: 'Back up and restore',
                   text:
-                  'Create a password-protected backup and '
+                      'Create a password-protected backup and '
                       'restore your documents when needed.',
                 ),
 
@@ -951,7 +913,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -1014,10 +975,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(fontSize: 11.5),
                   ),
                 ),
-                trailing: const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 21,
-                ),             onTap: _showAppLockUI,
+                trailing: const Icon(Icons.chevron_right_rounded, size: 21),
+                onTap: _showAppLockUI,
               ),
             ],
           ),
@@ -1053,19 +1012,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 trailing: _isBackupRestoreLoading
                     ? const SizedBox(
-                  width: 21,
-                  height: 21,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
-                )
-                    : const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 21,
-                ),
-                onTap: _isBackupRestoreLoading
-                    ? null
-                    : _backupDocuments,
+                        width: 21,
+                        height: 21,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.chevron_right_rounded, size: 21),
+                onTap: _isBackupRestoreLoading ? null : _backupDocuments,
               ),
 
               Divider(
@@ -1096,19 +1048,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 trailing: _isBackupRestoreLoading
                     ? const SizedBox(
-                  width: 21,
-                  height: 21,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
-                )
-                    : const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 21,
-                ),
-                onTap: _isBackupRestoreLoading
-                    ? null
-                    : _restoreBackup,
+                        width: 21,
+                        height: 21,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.chevron_right_rounded, size: 21),
+                onTap: _isBackupRestoreLoading ? null : _restoreBackup,
               ),
             ],
           ),
@@ -1265,4 +1210,3 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
-

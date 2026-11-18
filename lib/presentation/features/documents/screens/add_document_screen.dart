@@ -346,9 +346,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                           children: [
                             Text(
                               category.emoji,
-                              style: const TextStyle(
-                                fontSize: 20,
-                              ),
+                              style: const TextStyle(fontSize: 20),
                             ),
                             const SizedBox(width: 10),
                             Text(
@@ -368,16 +366,11 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.add_circle_outline_rounded,
-                            size: 20,
-                          ),
+                          Icon(Icons.add_circle_outline_rounded, size: 20),
                           SizedBox(width: 10),
                           Text(
                             'Add new category',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
@@ -551,7 +544,6 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
     );
   }
 }
-
 
 // ------------------------------------------------------------
 // SELECTED FILE PREVIEW

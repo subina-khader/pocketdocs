@@ -254,4 +254,3 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
     );
   }
 }
-

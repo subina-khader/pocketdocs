@@ -21,9 +21,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
-    await Future.delayed(
-      const Duration(milliseconds: 1200),
-    );
+    await Future.delayed(const Duration(milliseconds: 1200));
 
     if (!mounted) return;
 
@@ -53,11 +51,9 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _openHome() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => const HomeScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
   }
 
   @override
@@ -68,10 +64,7 @@ class _SplashScreenState extends State<SplashScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF4F46E5),
-              Color(0xFF6366F1),
-            ],
+            colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
           ),
         ),
         child: Center(

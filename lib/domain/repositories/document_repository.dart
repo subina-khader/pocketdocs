@@ -5,19 +5,11 @@ abstract class DocumentRepository {
 
   Future<Document?> getDocumentById(int id);
 
-  Future<Document> addDocument(
-      Document document,
-      );
+  Future<Document> addDocument(Document document);
 
-  Future<void> updateDocument(
-      Document document,
-      );
+  Future<void> updateDocument(Document document);
 
-  Future<void> deleteDocument(
-      int id,
-      );
+  Future<void> deleteDocument(int id);
 
-  Future<List<Document>> searchDocuments(
-      String query,
-      );
+  Future<List<Document>> searchDocuments(String query);
 }

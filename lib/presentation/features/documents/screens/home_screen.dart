@@ -15,6 +15,7 @@ import 'folder_documents_screen.dart';
 import 'settings_screen.dart';
 import 'category_management_screen.dart';
 import 'app_lock_screen.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -22,11 +23,10 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>  with WidgetsBindingObserver {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _index = 0;
   bool _shouldLockOnResume = false;
   bool _isShowingLock = false;
-
 
   @override
   void initState() {
@@ -36,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen>  with WidgetsBindingObserver {
       context.read<DocumentProvider>().loadData();
     });
   }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
@@ -43,12 +44,12 @@ class _HomeScreenState extends State<HomeScreen>  with WidgetsBindingObserver {
       return;
     }
 
-    if (state == AppLifecycleState.resumed &&
-        _shouldLockOnResume) {
+    if (state == AppLifecycleState.resumed && _shouldLockOnResume) {
       _shouldLockOnResume = false;
       _showAppLock();
     }
   }
+
   Future<void> _showAppLock() async {
     if (_isShowingLock || !mounted) return;
 
@@ -71,27 +72,27 @@ class _HomeScreenState extends State<HomeScreen>  with WidgetsBindingObserver {
       _isShowingLock = false;
     }
   }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     final pages = [
       const HomeContent(),
       const DocumentsScreen(),
-      SettingsScreen(
-        isActive: _index == 2,
-      ),
+      SettingsScreen(isActive: _index == 2),
     ];
     return Scaffold(
       body: IndexedStack(index: _index, children: pages),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const AddDocumentScreen()),
-          );
+          await Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const AddDocumentScreen()));
         },
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
@@ -124,5 +125,3 @@ class _HomeScreenState extends State<HomeScreen>  with WidgetsBindingObserver {
     );
   }
 }
-
-

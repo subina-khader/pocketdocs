@@ -9,14 +9,11 @@ class DatabaseKeyService {
 
   final FlutterSecureStorage secureStorage;
 
-  DatabaseKeyService({
-    FlutterSecureStorage? secureStorage,
-  }) : secureStorage = secureStorage ?? const FlutterSecureStorage();
+  DatabaseKeyService({FlutterSecureStorage? secureStorage})
+    : secureStorage = secureStorage ?? const FlutterSecureStorage();
 
   Future<String> getOrCreateKey() async {
-    final existingKey = await secureStorage.read(
-      key: _storageKey,
-    );
+    final existingKey = await secureStorage.read(key: _storageKey);
 
     if (existingKey != null && existingKey.isNotEmpty) {
       return existingKey;
@@ -25,18 +22,12 @@ class DatabaseKeyService {
     final random = Random.secure();
 
     final bytes = Uint8List.fromList(
-      List<int>.generate(
-        32,
-            (_) => random.nextInt(256),
-      ),
+      List<int>.generate(32, (_) => random.nextInt(256)),
     );
 
     final key = base64UrlEncode(bytes);
 
-    await secureStorage.write(
-      key: _storageKey,
-      value: key,
-    );
+    await secureStorage.write(key: _storageKey, value: key);
 
     return key;
   }

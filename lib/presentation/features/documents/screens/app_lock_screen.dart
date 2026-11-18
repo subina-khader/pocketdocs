@@ -39,8 +39,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
       if (!mounted) return;
 
       if (lockType == AppLockType.device) {
-        final authenticated =
-        await _appLockService.authenticateWithDevice();
+        final authenticated = await _appLockService.authenticateWithDevice();
 
         if (!mounted) return;
 
@@ -48,8 +47,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
           _unlock();
         } else {
           setState(() {
-            _errorText =
-            'Authentication failed. Please try again.';
+            _errorText = 'Authentication failed. Please try again.';
           });
         }
 
@@ -166,25 +164,21 @@ class _AppLockScreenState extends State<AppLockScreen> {
                     width: double.infinity,
                     height: 52,
                     child: FilledButton.icon(
-                      onPressed: _isAuthenticating
-                          ? null
-                          : _authenticate,
+                      onPressed: _isAuthenticating ? null : _authenticate,
                       icon: _isAuthenticating
                           ? const SizedBox(
-                        width: 19,
-                        height: 19,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.2,
-                        ),
-                      )
+                              width: 19,
+                              height: 19,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                              ),
+                            )
                           : const Icon(Icons.lock_open_rounded),
                       label: Text(
                         _isAuthenticating
                             ? 'Authenticating...'
                             : 'Unlock PocketDocs',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),

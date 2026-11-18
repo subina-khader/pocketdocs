@@ -38,7 +38,12 @@ class CategoryModel extends Category {
     };
   }
 
-  CategoryModel copyWith({int? id, String? name,   String? emoji,DateTime? createdAt}) {
+  CategoryModel copyWith({
+    int? id,
+    String? name,
+    String? emoji,
+    DateTime? createdAt,
+  }) {
     return CategoryModel(
       id: id ?? this.id,
       name: name ?? this.name,

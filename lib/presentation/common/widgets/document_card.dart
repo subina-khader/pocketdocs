@@ -49,10 +49,6 @@ class DocumentCard extends StatelessWidget {
                       categoryName ?? 'Uncategorized',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
-
-
-
-
                   ],
                 ),
               ),

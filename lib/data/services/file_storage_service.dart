@@ -10,32 +10,24 @@ import '../../core/errors/app_exceptions.dart';
 class FileStorageService {
   final Uuid uuid;
 
-  FileStorageService({
-    Uuid? uuid,
-  }) : uuid = uuid ?? const Uuid();
+  FileStorageService({Uuid? uuid}) : uuid = uuid ?? const Uuid();
 
   Future<Directory> _getDocumentsDirectory() async {
     try {
       return await getApplicationDocumentsDirectory();
     } catch (e) {
-      throw FileStorageException(
-        'Unable to access application storage.',
-      );
+      throw FileStorageException('Unable to access application storage.');
     }
   }
 
-  Future<Directory> _getStorageDirectory({
-    required bool isPdf,
-  }) async {
+  Future<Directory> _getStorageDirectory({required bool isPdf}) async {
     final appDirectory = await _getDocumentsDirectory();
 
     final folderName = isPdf
         ? AppConstants.pdfsFolder
         : AppConstants.imagesFolder;
 
-    final directory = Directory(
-      path.join(appDirectory.path, folderName),
-    );
+    final directory = Directory(path.join(appDirectory.path, folderName));
 
     if (!await directory.exists()) {
       await directory.create(recursive: true);
@@ -49,61 +41,44 @@ class FileStorageService {
     required bool isPdf,
   }) async {
     try {
-      final directory = await _getStorageDirectory(
-        isPdf: isPdf,
-      );
+      final directory = await _getStorageDirectory(isPdf: isPdf);
 
       final extension = path.extension(sourceFile.path);
 
       final uniqueFileName = '${uuid.v4()}$extension';
 
-      final destinationPath = path.join(
-        directory.path,
-        uniqueFileName,
-      );
+      final destinationPath = path.join(directory.path, uniqueFileName);
 
-      final savedFile = await sourceFile.copy(
-        destinationPath,
-      );
+      final savedFile = await sourceFile.copy(destinationPath);
 
       return savedFile.path;
     } catch (e) {
-      throw FileStorageException(
-        'Failed to save file: $e',
-      );
+      throw FileStorageException('Failed to save file: $e');
     }
   }
+
   Future<String> saveEncryptedBytes({
     required Uint8List encryptedBytes,
     required bool isPdf,
     String originalExtension = '.enc',
   }) async {
     try {
-      final directory = await _getStorageDirectory(
-        isPdf: isPdf,
-      );
+      final directory = await _getStorageDirectory(isPdf: isPdf);
 
       final uniqueFileName = '${uuid.v4()}$originalExtension';
 
-      final destinationPath = path.join(
-        directory.path,
-        uniqueFileName,
-      );
+      final destinationPath = path.join(directory.path, uniqueFileName);
 
       final file = File(destinationPath);
 
-      await file.writeAsBytes(
-        encryptedBytes,
-        flush: true,
-      );
+      await file.writeAsBytes(encryptedBytes, flush: true);
 
       return file.path;
     } catch (e) {
-      throw FileStorageException(
-        'Failed to save encrypted file: $e',
-      );
+      throw FileStorageException('Failed to save encrypted file: $e');
     }
   }
+
   Future<void> deleteFile(String filePath) async {
     try {
       final file = File(filePath);
@@ -112,9 +87,7 @@ class FileStorageService {
         await file.delete();
       }
     } catch (e) {
-      throw FileStorageException(
-        'Failed to delete file: $e',
-      );
+      throw FileStorageException('Failed to delete file: $e');
     }
   }
 
@@ -126,9 +99,7 @@ class FileStorageService {
   /// the restored database.
   ///
   /// Files whose paths are present in [keepPaths] are preserved.
-  Future<void> clearStorageExcept(
-      Set<String> keepPaths,
-      ) async {
+  Future<void> clearStorageExcept(Set<String> keepPaths) async {
     try {
       final appDirectory = await _getDocumentsDirectory();
 
@@ -138,12 +109,7 @@ class FileStorageService {
       ];
 
       for (final folderName in storageFolders) {
-        final directory = Directory(
-          path.join(
-            appDirectory.path,
-            folderName,
-          ),
-        );
+        final directory = Directory(path.join(appDirectory.path, folderName));
 
         if (!await directory.exists()) {
           continue;
@@ -156,9 +122,7 @@ class FileStorageService {
         }
       }
     } catch (e) {
-      throw FileStorageException(
-        'Failed to clean PocketDocs storage: $e',
-      );
+      throw FileStorageException('Failed to clean PocketDocs storage: $e');
     }
   }
 }

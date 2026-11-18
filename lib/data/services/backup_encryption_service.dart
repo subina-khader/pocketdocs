@@ -48,11 +48,7 @@ class BackupEncryptionService {
 
     final nonce = _aesGcm.newNonce();
 
-    final secretBox = await _aesGcm.encrypt(
-      data,
-      secretKey: key,
-      nonce: nonce,
-    );
+    final secretBox = await _aesGcm.encrypt(data, secretKey: key, nonce: nonce);
 
     return Uint8List.fromList([
       ..._magic,
@@ -71,16 +67,10 @@ class BackupEncryptionService {
     _validatePassword(password);
 
     final minimumLength =
-        _magic.length +
-            1 +
-            _saltLength +
-            _nonceLength +
-            _macLength;
+        _magic.length + 1 + _saltLength + _nonceLength + _macLength;
 
     if (encryptedData.length < minimumLength) {
-      throw const FormatException(
-        'Invalid or corrupted PocketDocs backup.',
-      );
+      throw const FormatException('Invalid or corrupted PocketDocs backup.');
     }
 
     _validateHeader(encryptedData);
@@ -96,36 +86,23 @@ class BackupEncryptionService {
       );
     }
 
-    final salt = encryptedData.sublist(
-      offset,
-      offset + _saltLength,
-    );
+    final salt = encryptedData.sublist(offset, offset + _saltLength);
 
     offset += _saltLength;
 
-    final nonce = encryptedData.sublist(
-      offset,
-      offset + _nonceLength,
-    );
+    final nonce = encryptedData.sublist(offset, offset + _nonceLength);
 
     offset += _nonceLength;
 
     final macStart = encryptedData.length - _macLength;
 
     if (macStart <= offset) {
-      throw const FormatException(
-        'Invalid or corrupted PocketDocs backup.',
-      );
+      throw const FormatException('Invalid or corrupted PocketDocs backup.');
     }
 
-    final cipherText = encryptedData.sublist(
-      offset,
-      macStart,
-    );
+    final cipherText = encryptedData.sublist(offset, macStart);
 
-    final mac = Mac(
-      encryptedData.sublist(macStart),
-    );
+    final mac = Mac(encryptedData.sublist(macStart));
 
     final key = await _argon2id.deriveKeyFromPassword(
       password: password,
@@ -133,16 +110,9 @@ class BackupEncryptionService {
     );
 
     try {
-      final secretBox = SecretBox(
-        cipherText,
-        nonce: nonce,
-        mac: mac,
-      );
+      final secretBox = SecretBox(cipherText, nonce: nonce, mac: mac);
 
-      final decrypted = await _aesGcm.decrypt(
-        secretBox,
-        secretKey: key,
-      );
+      final decrypted = await _aesGcm.decrypt(secretBox, secretKey: key);
 
       return Uint8List.fromList(decrypted);
     } catch (_) {
@@ -163,9 +133,7 @@ class BackupEncryptionService {
   void _validateHeader(Uint8List data) {
     for (var i = 0; i < _magic.length; i++) {
       if (data[i] != _magic[i]) {
-        throw const FormatException(
-          'This is not a valid PocketDocs backup.',
-        );
+        throw const FormatException('This is not a valid PocketDocs backup.');
       }
     }
   }
@@ -173,9 +141,6 @@ class BackupEncryptionService {
   List<int> _generateRandomBytes(int length) {
     final random = Random.secure();
 
-    return List<int>.generate(
-      length,
-          (_) => random.nextInt(256),
-    );
+    return List<int>.generate(length, (_) => random.nextInt(256));
   }
 }

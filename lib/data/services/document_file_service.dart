@@ -1,5 +1,3 @@
-
-
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:path/path.dart' as path;
@@ -28,9 +26,7 @@ class DocumentFileService {
       if (isPdf) {
         processedFile = sourceFile;
       } else {
-        processedFile = await imageCompressionService.compressImage(
-          sourceFile,
-        );
+        processedFile = await imageCompressionService.compressImage(sourceFile);
       }
 
       final bytes = await processedFile.readAsBytes();
@@ -61,23 +57,17 @@ class DocumentFileService {
     final file = File(filePath);
 
     if (!await file.exists()) {
-      throw FileSystemException(
-        'Document file not found.',
-        filePath,
-      );
+      throw FileSystemException('Document file not found.', filePath);
     }
 
     final bytes = await file.readAsBytes();
 
-    // Legacy PocketDocs files were stored unencrypted.
     // New files use the .enc extension.
     if (path.extension(filePath).toLowerCase() != '.enc') {
       return Uint8List.fromList(bytes);
     }
 
-    return encryptionService.decryptBytes(
-      Uint8List.fromList(bytes),
-    );
+    return encryptionService.decryptBytes(Uint8List.fromList(bytes));
   }
 
   Future<void> deleteFile(String filePath) {

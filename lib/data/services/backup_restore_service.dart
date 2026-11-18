@@ -44,9 +44,7 @@ class BackupRestoreService {
   // CREATE BACKUP
   // ===========================================================================
 
-  Future<File> createBackup({
-    required String password,
-  }) async {
+  Future<File> createBackup({required String password}) async {
     final documents = await documentRepository.getDocuments();
     final folders = await folderRepository.getFolders();
     final categories = await categoryRepository.getCategories();
@@ -56,17 +54,11 @@ class BackupRestoreService {
     final timestamp = _timestamp();
 
     final zipFile = File(
-      path.join(
-        tempDirectory.path,
-        'PocketDocs_Backup_$timestamp.zip',
-      ),
+      path.join(tempDirectory.path, 'PocketDocs_Backup_$timestamp.zip'),
     );
 
     final backupFile = File(
-      path.join(
-        tempDirectory.path,
-        'PocketDocs_Backup_$timestamp.pocketdocs',
-      ),
+      path.join(tempDirectory.path, 'PocketDocs_Backup_$timestamp.pocketdocs'),
     );
 
     final temporaryPlaintextFiles = <File>[];
@@ -80,9 +72,7 @@ class BackupRestoreService {
 
       for (final document in documents) {
         if (document.id == null) {
-          throw Exception(
-            'Cannot back up a document without an ID.',
-          );
+          throw Exception('Cannot back up a document without an ID.');
         }
 
         final file = File(document.filePath);
@@ -111,11 +101,7 @@ class BackupRestoreService {
         },
       };
 
-      await _addJsonFile(
-        encoder,
-        'manifest.json',
-        manifest,
-      );
+      await _addJsonFile(encoder, 'manifest.json', manifest);
 
       // -----------------------------------------------------------------------
       // Metadata.
@@ -157,11 +143,7 @@ class BackupRestoreService {
         }).toList(),
       };
 
-      await _addJsonFile(
-        encoder,
-        'data.json',
-        data,
-      );
+      await _addJsonFile(encoder, 'data.json', data);
 
       // -----------------------------------------------------------------------
       // Add decrypted document files to ZIP.
@@ -179,8 +161,7 @@ class BackupRestoreService {
 
         final backupFileName = 'files/$id$extension';
 
-        final encryptedOrPlainBytes =
-        await documentFileService.decryptFile(
+        final encryptedOrPlainBytes = await documentFileService.decryptFile(
           document.filePath,
         );
 
@@ -196,14 +177,9 @@ class BackupRestoreService {
           flush: true,
         );
 
-        temporaryPlaintextFiles.add(
-          temporaryPlaintextFile,
-        );
+        temporaryPlaintextFiles.add(temporaryPlaintextFile);
 
-        await encoder.addFile(
-          temporaryPlaintextFile,
-          backupFileName,
-        );
+        await encoder.addFile(temporaryPlaintextFile, backupFileName);
       }
     } finally {
       await encoder.close();
@@ -220,16 +196,12 @@ class BackupRestoreService {
       // Encrypt entire ZIP using the user backup password.
       // -----------------------------------------------------------------------
 
-      final encryptedBackup =
-      await backupEncryptionService.encrypt(
+      final encryptedBackup = await backupEncryptionService.encrypt(
         data: Uint8List.fromList(zipBytes),
         password: password,
       );
 
-      await backupFile.writeAsBytes(
-        encryptedBackup,
-        flush: true,
-      );
+      await backupFile.writeAsBytes(encryptedBackup, flush: true);
 
       return backupFile;
     } finally {
@@ -275,10 +247,7 @@ class BackupRestoreService {
     ).create(recursive: true);
 
     final decryptedZipFile = File(
-      path.join(
-        restoreDirectory.path,
-        'backup.zip',
-      ),
+      path.join(restoreDirectory.path, 'backup.zip'),
     );
 
     final restoredFiles = <String, String>{};
@@ -300,7 +269,7 @@ class BackupRestoreService {
       );
       debugPrint(
         '[BACKUP SERVICE] Header bytes: '
-            '${encryptedBytes.take(5).toList()}',
+        '${encryptedBytes.take(5).toList()}',
       );
       // -----------------------------------------------------------------------
       // Decrypt backup using supplied password.
@@ -313,24 +282,19 @@ class BackupRestoreService {
       );
       debugPrint(
         '[BACKUP SERVICE] Decryption successful. '
-            'Decrypted ZIP size: ${zipBytes.length} bytes.',
+        'Decrypted ZIP size: ${zipBytes.length} bytes.',
       );
-      await decryptedZipFile.writeAsBytes(
-        zipBytes,
-        flush: true,
-      );
+      await decryptedZipFile.writeAsBytes(zipBytes, flush: true);
 
       // -----------------------------------------------------------------------
       // Decode ZIP.
       // -----------------------------------------------------------------------
       debugPrint('[BACKUP SERVICE] Decoding ZIP archive.');
 
-      final archive = ZipDecoder().decodeBytes(
-        zipBytes,
-      );
+      final archive = ZipDecoder().decodeBytes(zipBytes);
       debugPrint(
         '[BACKUP SERVICE] ZIP entries: '
-            '${archive.map((entry) => entry.name).toList()}',
+        '${archive.map((entry) => entry.name).toList()}',
       );
 
       debugPrint('[BACKUP SERVICE] Validating archive.');
@@ -347,10 +311,7 @@ class BackupRestoreService {
       // Extract archive.
       // -----------------------------------------------------------------------
 
-      await extractArchiveToDisk(
-        archive,
-        restoreDirectory.path,
-      );
+      await extractArchiveToDisk(archive, restoreDirectory.path);
 
       archive.clear();
 
@@ -359,47 +320,34 @@ class BackupRestoreService {
       // -----------------------------------------------------------------------
 
       final manifestFile = File(
-        path.join(
-          restoreDirectory.path,
-          'manifest.json',
-        ),
+        path.join(restoreDirectory.path, 'manifest.json'),
       );
 
-      final dataFile = File(
-        path.join(
-          restoreDirectory.path,
-          'data.json',
-        ),
-      );
+      final dataFile = File(path.join(restoreDirectory.path, 'data.json'));
 
-      final manifest = jsonDecode(
-        await manifestFile.readAsString(),
-      ) as Map<String, dynamic>;
+      final manifest =
+          jsonDecode(await manifestFile.readAsString()) as Map<String, dynamic>;
 
-      final data = jsonDecode(
-        await dataFile.readAsString(),
-      ) as Map<String, dynamic>;
+      final data =
+          jsonDecode(await dataFile.readAsString()) as Map<String, dynamic>;
 
       _validateManifest(manifest);
 
-      final categories =
-      List<Map<String, dynamic>>.from(
+      final categories = List<Map<String, dynamic>>.from(
         (data['categories'] as List).map(
-              (item) => Map<String, dynamic>.from(item),
+          (item) => Map<String, dynamic>.from(item),
         ),
       );
 
-      final folders =
-      List<Map<String, dynamic>>.from(
+      final folders = List<Map<String, dynamic>>.from(
         (data['folders'] as List).map(
-              (item) => Map<String, dynamic>.from(item),
+          (item) => Map<String, dynamic>.from(item),
         ),
       );
 
-      final documents =
-      List<Map<String, dynamic>>.from(
+      final documents = List<Map<String, dynamic>>.from(
         (data['documents'] as List).map(
-              (item) => Map<String, dynamic>.from(item),
+          (item) => Map<String, dynamic>.from(item),
         ),
       );
 
@@ -407,30 +355,22 @@ class BackupRestoreService {
       // Validate document references before touching current database.
       // -----------------------------------------------------------------------
 
-      await _validateDocuments(
-        documents,
-        restoreDirectory,
-      );
+      await _validateDocuments(documents, restoreDirectory);
 
       // -----------------------------------------------------------------------
       // Re-encrypt every document using this installation's new local key.
       // -----------------------------------------------------------------------
 
       for (final document in documents) {
-        final backupFileName =
-        document['backupFile'] as String;
+        final backupFileName = document['backupFile'] as String;
 
         final extractedFile = File(
-          path.join(
-            restoreDirectory.path,
-            backupFileName,
-          ),
+          path.join(restoreDirectory.path, backupFileName),
         );
 
         final isPdf = document['fileType'] == 'pdf';
 
-        final restoredPath =
-        await documentFileService.processAndSave(
+        final restoredPath = await documentFileService.processAndSave(
           sourceFile: extractedFile,
           isPdf: isPdf,
         );
@@ -448,17 +388,11 @@ class BackupRestoreService {
         // Documents reference categories and folders.
         // Delete documents first.
 
-        await txn.delete(
-          DatabaseConstants.documentsTable,
-        );
+        await txn.delete(DatabaseConstants.documentsTable);
 
-        await txn.delete(
-          DatabaseConstants.foldersTable,
-        );
+        await txn.delete(DatabaseConstants.foldersTable);
 
-        await txn.delete(
-          DatabaseConstants.categoriesTable,
-        );
+        await txn.delete(DatabaseConstants.categoriesTable);
 
         // ---------------------------------------------------------------------
         // Restore categories.
@@ -469,17 +403,11 @@ class BackupRestoreService {
         for (final category in categories) {
           final oldId = category['id'] as int?;
 
-          final newId = await txn.insert(
-            DatabaseConstants.categoriesTable,
-            {
-              DatabaseConstants.categoryName:
-              category['name'],
-              DatabaseConstants.categoryEmoji:
-              category['emoji'],
-              DatabaseConstants.categoryCreatedAt:
-              category['createdAt'],
-            },
-          );
+          final newId = await txn.insert(DatabaseConstants.categoriesTable, {
+            DatabaseConstants.categoryName: category['name'],
+            DatabaseConstants.categoryEmoji: category['emoji'],
+            DatabaseConstants.categoryCreatedAt: category['createdAt'],
+          });
 
           if (oldId != null) {
             categoryIdMap[oldId] = newId;
@@ -495,15 +423,10 @@ class BackupRestoreService {
         for (final folder in folders) {
           final oldId = folder['id'] as int?;
 
-          final newId = await txn.insert(
-            DatabaseConstants.foldersTable,
-            {
-              DatabaseConstants.folderName:
-              folder['name'],
-              DatabaseConstants.folderCreatedAt:
-              folder['createdAt'],
-            },
-          );
+          final newId = await txn.insert(DatabaseConstants.foldersTable, {
+            DatabaseConstants.folderName: folder['name'],
+            DatabaseConstants.folderCreatedAt: folder['createdAt'],
+          });
 
           if (oldId != null) {
             folderIdMap[oldId] = newId;
@@ -515,11 +438,9 @@ class BackupRestoreService {
         // ---------------------------------------------------------------------
 
         for (final document in documents) {
-          final oldCategoryId =
-          document['categoryId'] as int?;
+          final oldCategoryId = document['categoryId'] as int?;
 
-          final oldFolderId =
-          document['folderId'] as int?;
+          final oldFolderId = document['folderId'] as int?;
 
           final categoryId = oldCategoryId == null
               ? null
@@ -529,37 +450,23 @@ class BackupRestoreService {
               ? null
               : folderIdMap[oldFolderId];
 
-          final backupFileName =
-          document['backupFile'] as String;
+          final backupFileName = document['backupFile'] as String;
 
-          final restoredPath =
-          restoredFiles[backupFileName];
+          final restoredPath = restoredFiles[backupFileName];
 
           if (restoredPath == null) {
-            throw Exception(
-              'Restored file is missing: $backupFileName',
-            );
+            throw Exception('Restored file is missing: $backupFileName');
           }
 
-          await txn.insert(
-            DatabaseConstants.documentsTable,
-            {
-              DatabaseConstants.title:
-              document['title'],
-              DatabaseConstants.categoryId:
-              categoryId,
-              DatabaseConstants.filePath:
-              restoredPath,
-              DatabaseConstants.fileType:
-              document['fileType'],
-              DatabaseConstants.createdAt:
-              document['createdAt'],
-              DatabaseConstants.notes:
-              document['notes'],
-              DatabaseConstants.folderId:
-              folderId,
-            },
-          );
+          await txn.insert(DatabaseConstants.documentsTable, {
+            DatabaseConstants.title: document['title'],
+            DatabaseConstants.categoryId: categoryId,
+            DatabaseConstants.filePath: restoredPath,
+            DatabaseConstants.fileType: document['fileType'],
+            DatabaseConstants.createdAt: document['createdAt'],
+            DatabaseConstants.notes: document['notes'],
+            DatabaseConstants.folderId: folderId,
+          });
         }
       });
 
@@ -569,12 +476,9 @@ class BackupRestoreService {
       // Delete old/orphaned PocketDocs files.
       // -----------------------------------------------------------------------
 
-      await fileStorageService.clearStorageExcept(
-        restoredFiles.values.toSet(),
-      );
+      await fileStorageService.clearStorageExcept(restoredFiles.values.toSet());
     } catch (e) {
       // -----------------------------------------------------------------------
-      // IMPORTANT:
       //
       // If the database transaction already succeeded, do NOT delete the
       // restored files even if the final storage cleanup failed.
@@ -583,9 +487,7 @@ class BackupRestoreService {
       if (!databaseRestoreSucceeded) {
         for (final restoredPath in restoredFiles.values) {
           try {
-            await fileStorageService.deleteFile(
-              restoredPath,
-            );
+            await fileStorageService.deleteFile(restoredPath);
           } catch (_) {}
         }
       }
@@ -598,9 +500,7 @@ class BackupRestoreService {
 
       if (await restoreDirectory.exists()) {
         try {
-          await restoreDirectory.delete(
-            recursive: true,
-          );
+          await restoreDirectory.delete(recursive: true);
         } catch (_) {}
       }
     }
@@ -617,22 +517,16 @@ class BackupRestoreService {
         .toSet();
 
     if (!names.contains('manifest.json')) {
-      throw Exception(
-        'Invalid PocketDocs backup: manifest.json is missing.',
-      );
+      throw Exception('Invalid PocketDocs backup: manifest.json is missing.');
     }
 
     if (!names.contains('data.json')) {
-      throw Exception(
-        'Invalid PocketDocs backup: data.json is missing.',
-      );
+      throw Exception('Invalid PocketDocs backup: data.json is missing.');
     }
 
     for (final entry in archive) {
       if (_containsUnsafePath(entry.name)) {
-        throw Exception(
-          'Invalid PocketDocs backup: unsafe file path.',
-        );
+        throw Exception('Invalid PocketDocs backup: unsafe file path.');
       }
 
       if (entry.isSymbolicLink) {
@@ -643,64 +537,43 @@ class BackupRestoreService {
     }
   }
 
-  void _validateManifest(
-      Map<String, dynamic> manifest,
-      ) {
+  void _validateManifest(Map<String, dynamic> manifest) {
     if (manifest['format'] != _format) {
-      throw Exception(
-        'This file is not a PocketDocs backup.',
-      );
+      throw Exception('This file is not a PocketDocs backup.');
     }
 
     if (manifest['version'] != _version) {
-      throw Exception(
-        'This PocketDocs backup version is not supported.',
-      );
+      throw Exception('This PocketDocs backup version is not supported.');
     }
   }
 
   Future<void> _validateDocuments(
-      List<Map<String, dynamic>> documents,
-      Directory restoreDirectory,
-      ) async {
+    List<Map<String, dynamic>> documents,
+    Directory restoreDirectory,
+  ) async {
     for (final document in documents) {
-      final backupFileName =
-      document['backupFile'];
+      final backupFileName = document['backupFile'];
 
-      if (backupFileName is! String ||
-          !backupFileName.startsWith('files/')) {
-        throw Exception(
-          'Invalid document file reference.',
-        );
+      if (backupFileName is! String || !backupFileName.startsWith('files/')) {
+        throw Exception('Invalid document file reference.');
       }
 
-      final file = File(
-        path.join(
-          restoreDirectory.path,
-          backupFileName,
-        ),
-      );
+      final file = File(path.join(restoreDirectory.path, backupFileName));
 
       if (!await file.exists()) {
-        throw Exception(
-          'A document file is missing from the backup.',
-        );
+        throw Exception('A document file is missing from the backup.');
       }
 
       final fileType = document['fileType'];
 
       if (fileType != 'image' && fileType != 'pdf') {
-        throw Exception(
-          'Unsupported document file type.',
-        );
+        throw Exception('Unsupported document file type.');
       }
     }
   }
 
   bool _containsUnsafePath(String fileName) {
-    final normalized = path.posix.normalize(
-      fileName.replaceAll('\\', '/'),
-    );
+    final normalized = path.posix.normalize(fileName.replaceAll('\\', '/'));
 
     return normalized.startsWith('../') ||
         normalized == '..' ||
@@ -709,12 +582,11 @@ class BackupRestoreService {
   }
 
   Future<void> _addJsonFile(
-      ZipFileEncoder encoder,
-      String fileName,
-      Map<String, dynamic> data,
-      ) async {
-    final tempDirectory =
-    await getTemporaryDirectory();
+    ZipFileEncoder encoder,
+    String fileName,
+    Map<String, dynamic> data,
+  ) async {
+    final tempDirectory = await getTemporaryDirectory();
 
     final jsonFile = File(
       path.join(
@@ -728,10 +600,7 @@ class BackupRestoreService {
         const JsonEncoder.withIndent('  ').convert(data),
       );
 
-      await encoder.addFile(
-        jsonFile,
-        fileName,
-      );
+      await encoder.addFile(jsonFile, fileName);
     } finally {
       if (await jsonFile.exists()) {
         await jsonFile.delete();
@@ -742,8 +611,7 @@ class BackupRestoreService {
   String _timestamp() {
     final now = DateTime.now();
 
-    String two(int value) =>
-        value.toString().padLeft(2, '0');
+    String two(int value) => value.toString().padLeft(2, '0');
 
     return '${now.year}'
         '${two(now.month)}'

@@ -10,19 +10,16 @@ import '../../core/errors/app_exceptions.dart';
 class ImageCompressionService {
   Future<File> compressImage(File sourceFile) async {
     try {
-      final temporaryDirectory =
-      await getTemporaryDirectory();
+      final temporaryDirectory = await getTemporaryDirectory();
 
-      final extension =
-      path.extension(sourceFile.path).toLowerCase();
+      final extension = path.extension(sourceFile.path).toLowerCase();
 
-      final targetExtension =
-      extension == '.png' ? '.png' : '.jpg';
+      final targetExtension = extension == '.png' ? '.png' : '.jpg';
 
       final targetPath = path.join(
         temporaryDirectory.path,
         'compressed_${DateTime.now().millisecondsSinceEpoch}'
-            '$targetExtension',
+        '$targetExtension',
       );
 
       final result = await FlutterImageCompress.compressAndGetFile(
@@ -37,9 +34,7 @@ class ImageCompressionService {
       );
 
       if (result == null) {
-        throw const ImageProcessingException(
-          'Image compression failed.',
-        );
+        throw const ImageProcessingException('Image compression failed.');
       }
 
       return File(result.path);
@@ -48,9 +43,7 @@ class ImageCompressionService {
         rethrow;
       }
 
-      throw ImageProcessingException(
-        'Failed to compress image: $e',
-      );
+      throw ImageProcessingException('Failed to compress image: $e');
     }
   }
 }

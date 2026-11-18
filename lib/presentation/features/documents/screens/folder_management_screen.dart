@@ -60,7 +60,6 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
       },
     );
 
-
     if (folderName == null || folderName.isEmpty) {
       return;
     }
@@ -113,7 +112,6 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
         );
       },
     );
-
 
     if (folderName == null || folderName.isEmpty) {
       return;
@@ -362,4 +360,3 @@ class _FolderManagementScreenState extends State<FolderManagementScreen> {
     );
   }
 }
-

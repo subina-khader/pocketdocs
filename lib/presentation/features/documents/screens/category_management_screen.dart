@@ -5,10 +5,11 @@ import '../providers/document_provider.dart';
 import '../../../../domain/entities/category.dart';
 import '../widgets/category_dialog.dart';
 import '../widgets/category_tile.dart';
+
 Future<Category?> showCategoryDialog(
-    BuildContext context, {
-      Category? category,
-    }) async {
+  BuildContext context, {
+  Category? category,
+}) async {
   return showDialog<Category>(
     context: context,
     builder: (_) {
@@ -16,6 +17,7 @@ Future<Category?> showCategoryDialog(
     },
   );
 }
+
 class CategoryManagementScreen extends StatelessWidget {
   const CategoryManagementScreen({super.key});
 
@@ -69,9 +71,6 @@ class CategoryManagementScreen extends StatelessWidget {
     );
   }
 
-
-
-
   Future<void> _deleteCategory(BuildContext context, Category category) async {
     final provider = context.read<DocumentProvider>();
 
@@ -124,4 +123,3 @@ class CategoryManagementScreen extends StatelessWidget {
     }
   }
 }
-

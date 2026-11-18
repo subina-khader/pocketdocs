@@ -10,9 +10,7 @@ class DatabaseHelper {
 
   final DatabaseKeyService databaseKeyService;
 
-  DatabaseHelper({
-    required this.databaseKeyService,
-  });
+  DatabaseHelper({required this.databaseKeyService});
 
   Future<Database> get database async {
     if (_database != null) {
@@ -33,17 +31,14 @@ class DatabaseHelper {
         DatabaseConstants.databaseName,
       );
 
-      final databaseKey =
-      await databaseKeyService.getOrCreateKey();
+      final databaseKey = await databaseKeyService.getOrCreateKey();
 
       return await openDatabase(
         databaseFilePath,
         version: DatabaseConstants.databaseVersion,
         password: databaseKey,
         onConfigure: (db) async {
-          await db.execute(
-            'PRAGMA foreign_keys = ON',
-          );
+          await db.execute('PRAGMA foreign_keys = ON');
         },
         onCreate: _onCreate,
       );
@@ -54,10 +49,7 @@ class DatabaseHelper {
     }
   }
 
-  Future<void> _onCreate(
-      Database db,
-      int version,
-      ) async {
+  Future<void> _onCreate(Database db, int version) async {
     // -------------------------
     // FOLDERS TABLE
     // -------------------------
@@ -144,40 +136,19 @@ class DatabaseHelper {
     final now = DateTime.now().toIso8601String();
 
     final defaultCategories = [
-      {
-        'name': 'Receipt',
-        'emoji': '🧾',
-      },
-      {
-        'name': 'ID Card',
-        'emoji': '🪪',
-      },
-      {
-        'name': 'Vehicle',
-        'emoji': '🚗',
-      },
-      {
-        'name': 'Certificate',
-        'emoji': '🎓',
-      },
-      {
-        'name': 'Bill',
-        'emoji': '💰',
-      },
+      {'name': 'Receipt', 'emoji': '🧾'},
+      {'name': 'ID Card', 'emoji': '🪪'},
+      {'name': 'Vehicle', 'emoji': '🚗'},
+      {'name': 'Certificate', 'emoji': '🎓'},
+      {'name': 'Bill', 'emoji': '💰'},
     ];
 
     for (final category in defaultCategories) {
-      await db.insert(
-        DatabaseConstants.categoriesTable,
-        {
-          DatabaseConstants.categoryName:
-          category['name'],
-          DatabaseConstants.categoryEmoji:
-          category['emoji'],
-          DatabaseConstants.categoryCreatedAt:
-          now,
-        },
-      );
+      await db.insert(DatabaseConstants.categoriesTable, {
+        DatabaseConstants.categoryName: category['name'],
+        DatabaseConstants.categoryEmoji: category['emoji'],
+        DatabaseConstants.categoryCreatedAt: now,
+      });
     }
   }
 

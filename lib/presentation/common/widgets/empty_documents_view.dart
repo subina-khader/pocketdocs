@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class EmptyDocumentsView extends StatelessWidget {
   final VoidCallback onAddDocument;
 
-  const EmptyDocumentsView({
-    super.key,
-    required this.onAddDocument,
-  });
+  const EmptyDocumentsView({super.key, required this.onAddDocument});
 
   @override
   Widget build(BuildContext context) {
@@ -19,16 +16,12 @@ class EmptyDocumentsView extends StatelessWidget {
             Icon(
               Icons.folder_open_outlined,
               size: 72,
-              color: Theme.of(context)
-                  .colorScheme
-                  .primary,
+              color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(height: 20),
             Text(
               'No documents yet',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             const Text(

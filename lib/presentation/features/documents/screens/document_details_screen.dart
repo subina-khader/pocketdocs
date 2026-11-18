@@ -27,10 +27,9 @@ class DocumentDetailsScreen extends StatelessWidget {
   Future<Uint8List> _decryptDocument() async {
     final fileService = sl<DocumentFileService>();
 
-    return fileService.decryptFile(
-      document.filePath,
-    );
+    return fileService.decryptFile(document.filePath);
   }
+
   Future<void> _share(BuildContext context) async {
     File? tempFile;
 
@@ -39,9 +38,7 @@ class DocumentDetailsScreen extends StatelessWidget {
 
       final tempDirectory = await getTemporaryDirectory();
 
-      final extension = document.fileType == DocumentType.pdf
-          ? 'pdf'
-          : 'jpg';
+      final extension = document.fileType == DocumentType.pdf ? 'pdf' : 'jpg';
 
       tempFile = File(
         path.join(
@@ -50,22 +47,14 @@ class DocumentDetailsScreen extends StatelessWidget {
         ),
       );
 
-      await tempFile.writeAsBytes(
-        bytes,
-        flush: true,
-      );
+      await tempFile.writeAsBytes(bytes, flush: true);
 
-      await Share.shareXFiles(
-        [XFile(tempFile.path)],
-        text: document.title,
-      );
+      await Share.shareXFiles([XFile(tempFile.path)], text: document.title);
     } catch (e) {
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to share document.'),
-        ),
+        const SnackBar(content: Text('Unable to share document.')),
       );
     } finally {
       if (tempFile != null && await tempFile.exists()) {
@@ -86,13 +75,9 @@ class DocumentDetailsScreen extends StatelessWidget {
 
       final tempDirectory = await getTemporaryDirectory();
 
-      final extension = document.fileType == DocumentType.pdf
-          ? 'pdf'
-          : 'jpg';
+      final extension = document.fileType == DocumentType.pdf ? 'pdf' : 'jpg';
 
-      final fileName = _getFileNameWithoutExtension(
-        document.title,
-      );
+      final fileName = _getFileNameWithoutExtension(document.title);
 
       tempFile = File(
         path.join(
@@ -101,10 +86,7 @@ class DocumentDetailsScreen extends StatelessWidget {
         ),
       );
 
-      await tempFile.writeAsBytes(
-        bytes,
-        flush: true,
-      );
+      await tempFile.writeAsBytes(bytes, flush: true);
 
       if (document.fileType == DocumentType.pdf) {
         await FileSaver.instance.saveToDownloads(
@@ -138,11 +120,9 @@ class DocumentDetailsScreen extends StatelessWidget {
     } catch (e) {
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to save document.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Unable to save document.')));
     } finally {
       if (tempFile != null && await tempFile.exists()) {
         await tempFile.delete();
@@ -276,20 +256,15 @@ class DocumentDetailsScreen extends StatelessWidget {
   // FULL SCREEN IMAGE
   // ------------------------------------------------------------
 
-  void _openFullScreenImage(
-      BuildContext context,
-      Uint8List bytes,
-      ) {
+  void _openFullScreenImage(BuildContext context, Uint8List bytes) {
     if (document.fileType != DocumentType.image) {
       return;
     }
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => FullScreenImageViewer(
-          imageBytes: bytes,
-          title: document.title,
-        ),
+        builder: (_) =>
+            FullScreenImageViewer(imageBytes: bytes, title: document.title),
       ),
     );
   }
@@ -439,17 +414,12 @@ class DocumentDetailsScreen extends StatelessWidget {
         future: _decryptDocument(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError || !snapshot.hasData) {
             return const Center(
-              child: Icon(
-                Icons.lock_outline_rounded,
-                size: 52,
-              ),
+              child: Icon(Icons.lock_outline_rounded, size: 52),
             );
           }
 
@@ -461,10 +431,7 @@ class DocumentDetailsScreen extends StatelessWidget {
 
           return GestureDetector(
             onTap: () {
-              _openFullScreenImage(
-                context,
-                bytes,
-              );
+              _openFullScreenImage(context, bytes);
             },
             child: Stack(
               fit: StackFit.expand,
@@ -474,10 +441,7 @@ class DocumentDetailsScreen extends StatelessWidget {
                   fit: BoxFit.contain,
                   errorBuilder: (_, __, ___) {
                     return const Center(
-                      child: Icon(
-                        Icons.broken_image_outlined,
-                        size: 52,
-                      ),
+                      child: Icon(Icons.broken_image_outlined, size: 52),
                     );
                   },
                 ),
@@ -497,11 +461,7 @@ class DocumentDetailsScreen extends StatelessWidget {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.fullscreen,
-                          color: Colors.white,
-                          size: 17,
-                        ),
+                        Icon(Icons.fullscreen, color: Colors.white, size: 17),
                         SizedBox(width: 5),
                         Text(
                           'Full screen',

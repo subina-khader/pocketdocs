@@ -3,6 +3,7 @@ import '../datasources/document_local_data_source.dart';
 import '../models/document_model.dart';
 import '../services/document_file_service.dart';
 import '../../domain/repositories/document_repository.dart';
+
 class DocumentRepositoryImpl implements DocumentRepository {
   final DocumentLocalDataSource localDataSource;
   final DocumentFileService documentFileService;
@@ -26,9 +27,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
   Future<Document> addDocument(Document document) async {
     final model = DocumentModel.fromEntity(document);
 
-    final savedDocument = await localDataSource.insertDocument(
-      model,
-    );
+    final savedDocument = await localDataSource.insertDocument(model);
 
     return savedDocument;
   }
@@ -50,9 +49,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
 
     await localDataSource.deleteDocument(id);
 
-    await documentFileService.deleteFile(
-      document.filePath,
-    );
+    await documentFileService.deleteFile(document.filePath);
   }
 
   @override
@@ -61,8 +58,6 @@ class DocumentRepositoryImpl implements DocumentRepository {
       return getDocuments();
     }
 
-    return await localDataSource.searchDocuments(
-      query.trim(),
-    );
+    return await localDataSource.searchDocuments(query.trim());
   }
 }

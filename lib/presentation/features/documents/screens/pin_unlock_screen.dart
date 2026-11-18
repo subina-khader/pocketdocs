@@ -10,8 +10,7 @@ class PinUnlockScreen extends StatefulWidget {
 }
 
 class _PinUnlockScreenState extends State<PinUnlockScreen> {
-  final TextEditingController _pinController =
-  TextEditingController();
+  final TextEditingController _pinController = TextEditingController();
 
   final FocusNode _pinFocusNode = FocusNode();
 
@@ -83,9 +82,7 @@ class _PinUnlockScreenState extends State<PinUnlockScreen> {
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 28,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -144,19 +141,17 @@ class _PinUnlockScreenState extends State<PinUnlockScreen> {
                       letterSpacing: 9,
                     ),
                     decoration: InputDecoration(
-
                       counterText: '',
                       filled: true,
-                      fillColor:
-                      colorScheme.surfaceContainerLow,
+                      fillColor: colorScheme.surfaceContainerLow,
                       suffixIcon: IconButton(
                         onPressed: _isChecking
                             ? null
                             : () {
-                          setState(() {
-                            _obscurePin = !_obscurePin;
-                          });
-                        },
+                                setState(() {
+                                  _obscurePin = !_obscurePin;
+                                });
+                              },
                         icon: Icon(
                           _obscurePin
                               ? Icons.visibility_outlined
@@ -188,22 +183,19 @@ class _PinUnlockScreenState extends State<PinUnlockScreen> {
                     width: double.infinity,
                     height: 52,
                     child: FilledButton(
-                      onPressed:
-                      _isChecking ? null : _unlock,
+                      onPressed: _isChecking ? null : _unlock,
                       child: _isChecking
                           ? const SizedBox(
-                        width: 21,
-                        height: 21,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.2,
-                        ),
-                      )
+                              width: 21,
+                              height: 21,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                              ),
+                            )
                           : const Text(
-                        'Unlock',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                              'Unlock',
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
                     ),
                   ),
                 ],
