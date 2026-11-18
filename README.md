@@ -73,26 +73,26 @@ PocketDocs follows a layered, Clean Architecture-inspired structure to separate 
 
 ### App Introduction
 <p align="center">
-  <img src="screenshots/splash.jpg" width="220"/>
+  <img src="assets/screenshots/splash.jpg" width="220"/>
 </p>
 
 ### Main Experience
 <p align="center">
-  <img src="screenshots/home.jpg" width="220"/>
-  <img src="screenshots/documents.jpg" width="220"/>
+  <img src="assets/screenshots/home.jpg" width="220"/>
+  <img src="assets/screenshots/documents.jpg" width="220"/>
 </p>
 
 ### Document Organization
 <p align="center">
-  <img src="screenshots/categories.jpg" width="220"/>
-  <img src="screenshots/folderlisting.jpg" width="220"/>
-  <img src="screenshots/adddocmnt.jpg" width="220"/>
+  <img src="assets/screenshots/categories.jpg" width="220"/>
+  <img src="assets/screenshots/folderlisting.jpg" width="220"/>
+  <img src="assets/screenshots/adddocmnt.jpg" width="220"/>
 </p>
 
 ### Security & Settings
 <p align="center">
-  <img src="screenshots/applock.jpg" width="220"/>
-  <img src="screenshots/settings.jpg" width="220"/>
+  <img src="assets/screenshots/applock.jpg" width="220"/>
+  <img src="assets/screenshots/settings.jpg" width="220"/>
 </p>
 
 ## 🚀 Getting Started
@@ -109,7 +109,7 @@ PocketDocs follows a layered, Clean Architecture-inspired structure to separate 
 1. Clone the repository:
 
    ```bash
-   git clone YOUR_GITHUB_REPOSITORY_URL
+  [git clone YOUR_GITHUB_REPOSITORY_URL](https://github.com/subina-khader/pocketdocs.git)
    ```
 
 2. Navigate to the project directory:
