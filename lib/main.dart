@@ -8,7 +8,9 @@ import 'presentation/features/documents/screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  //	Initializes Flutter's connection with native/platform services
   await initializeDependencies();
+  //call initializeDependenciesfunction from injection_container.dart
   runApp(const PocketDocsApp());
 }
 
@@ -19,6 +21,7 @@ class PocketDocsApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => sl<DocumentProvider>(),
+      //sl defined in injection_container.dart which is a  service locator
       child: MaterialApp(
         title: 'PocketDocs',
         debugShowCheckedModeBanner: false,
