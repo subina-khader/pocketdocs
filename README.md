@@ -109,9 +109,9 @@ PocketDocs follows a layered, Clean Architecture-inspired structure to separate 
 1. Clone the repository:
 
    ```bash
-  [git clone YOUR_GITHUB_REPOSITORY_URL](https://github.com/subina-khader/pocketdocs.git)
+   git clone https://github.com/subina-khader/pocketdocs.git
    ```
-
+   
 2. Navigate to the project directory:
 
    ```bash
